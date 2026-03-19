@@ -15,7 +15,7 @@ once you have both files here is a easy sample of how to use:
 #include <iostream>
 #include <string>
 using namespace std;
-std::string generateRandomMatrix(const string data[]) 
+std::string generateRandomMatrix(const string data[]){.....} 
 int main(int argc,const char** argv) {
     DEFINE_TOOL(//here you can define your own tool which can be used in LLM tool calling
         get_ramdon_matrix,//the name of tool
