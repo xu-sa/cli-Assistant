@@ -9,7 +9,7 @@ How to use:
 first of all , this Repository is just a CPP Lib which gives a super user friendly way to embed AI agent into your workflow.
 you need to build this project with Cmake on your own OR download the Release Compressed file to get the Archive file and the header file which tells you how to use.
 once you have both files here is a easy sample of how to use:
-/*
+#Sample
 #include "./lib/syagent_interface.h"
 #include <iostream>
 #include <string>
@@ -39,4 +39,4 @@ int main(int argc,const char** argv) {
     }
     
     return 0;
-}*/
+}
