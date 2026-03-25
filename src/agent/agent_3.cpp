@@ -1,146 +1,74 @@
+//Interactive functions
 #include "sagent.h"
+#include "../data/sydata.h"
+#include "../utils/file/util_parse_file.h"
 #include <iostream>
 #include <unistd.h>
-#include "../json/json.hpp"
-#include "../utils/utils.h"
+#define PRINT_ERROR std::cout<<"Unexpected Error Occurred : 2";
+
 using json=nlohmann::json;
 using namespace std;
 
-void sagtlib::Agent::direct_chat_session(){
+void sagtlib::Agent::interface(){//start a terminal session for chating
     string input;
     while (this->on)
     {
-        cout<<"user: ";
         getline(cin,input);
         this->push_input(0,input);
-        {
-            int i=this->push_out;
-            while (this->push_out==i)sleep_2;
-        }
+        while (this->queued_input!=0)sleep_2;
     }   
 }
 
-void sagtlib::Agent::push_input(int i,const string& text){//input port
-    lock_guard<mutex> locker(this->input_mutex);
-    sleep_2
-    this->input_pool[this->push_in].message+=text;
-    this->input_pool[this->push_in].type=(input_from)i;
-    this->push_in=(this->push_in==4?0:this->push_in+1);
-    this->queued_input+=1;
-}
-
-void sagtlib::Agent::listen_input_thread(){//main loop thread
-    while(this->on){
-        sleep_2
-        if(this->queued_input<=0)continue;
-        string message;
-        string image;
-        input_from type;
-        {
-            lock_guard<mutex> locker(this->input_mutex);
-            message = this->input_pool[this->push_out].message;
-            image = this->input_pool[this->push_out].image;
-            type = this->input_pool[this->push_out].type;
-            this->queued_input-=1;
-            this->image_attached=!(image=="");
-        }
-        
-        if(message[0] == '/')// if user need to excutem commands
-        {
-            string command ,value;
-            istringstream ss(message);
-            ss>>command;
-            ss.seekg(1,ios::cur);//jump over space Between command and value 
-            getline(ss,value);
-            if(command=="/exit")this->on=0;
-            else if(command=="/save")this->save(value);
-            else if(command=="/reload")this->load();
-            else if(command=="/file")this->attach_file(value);
-            else if(command=="/config"){
-                if(type==CLT_input){
-                    cout<<this->config(value);
-                }else{
-                    this->cout_to_web(this->config(value));
-                }
-            }
-            else {
-                if(type==CLT_input){
-                    cout<<this->help();
-                }else{
-                    this->cout_to_web(this->help());
-                }
-            }
-        
-        }
-        else if(this->profile.chat_state==READY)//check status and send message
-        {
-            if(!this->image_attached)this->message_pool.push_back({{"role","user"},{"content",message}});
-            else{
-                json content=json::array();
-                content.push_back({{"type","text"},{"text",message}});
-                content.push_back({{"type", "image_url"},{ "image_url",{{"url",image}}}});//data:image/png;base64,iVBO.....
-                this->message_pool.push_back({{"role","user"},{"content",content}});
-            }
-            if(type==NET_input){
-
-            }else cout<<this->send()<<endl;
-            while (this->profile.chat_state!=READY)cout<<this->send()<<endl;
-        }
-        {//step to next
-            lock_guard<mutex> locker(this->input_mutex);
-            sleep_2
-            this->input_pool[this->push_out].message.clear();
-            this->input_pool[this->push_out].image.clear();   
-            this->push_out=(this->push_out==4?0:this->push_out+1);
-        }
+void sagtlib::Agent::send_message(){
+    if(this->input_pool[this->push_out].message[0]=='/')this->input_pool[this->push_out].message.erase(0,6);
+    if(!this->image_attached)this->message_pool.push_back({{"role","user"},{"content",this->input_pool[this->push_out].message}});
+    else{
+        json content=json::array();
+        content.push_back({{"type","text"},{"text",this->input_pool[this->push_out].message}});
+        content.push_back({{"type", "image_url"},{ "image_url",{{"url",this->input_pool[this->push_out].image}}}});//data:image/png;base64,iVBO.....
+        this->message_pool.push_back({{"role","user"},{"content",content}});
     }
-    cout<<"\n——agent "<<this->profile.name<<" is been deactivated."<<endl;
-    this->message_pool.clear();
-    this->message_pool.shrink_to_fit();
+    if(this->input_pool[this->push_out].type==NET_input){
+        this->cout_to_web(this->send()+"\n");
+        while (this->chat_state!=READY)this->cout_to_web(this->send()+"\n");
+    }else {
+        cout<<this->send()<<endl;
+        while (this->chat_state!=READY)cout<<this->send()<<endl;
+    }
 }
 
-void sagtlib::Agent::attach_file(const std::string& path){
+string sagtlib::Agent::attach_file(const std::string& path){
     string suffix="";
-    FileCategory type= (FileCategory)check_file_type(path);
-    lock_guard<mutex> locker(this->input_mutex);
+    FileCategory type= check_file_type(path);
     switch (type)
     {
     case NOT_SUPPORTED:
-        cout<<"this file is not supported\n";
         this->input_pool[this->push_in].message.clear();
-        this->input_pool[this->push_in].message+="\n**user tried to send file ```\n"+path+"\n``` but not able to view in the chat**\n";
-        break;
+        this->input_pool[this->push_in].message+="\n**user tried to send file ```\n"+path+"\n``` which does not exist**\n";
+        return "this file "+path+" is not found\n";
     case NO_MARCH:
-        cout<<"this file is found but not in the list\n";
         this->input_pool[this->push_in].message.clear();
-        this->input_pool[this->push_in].message+="\n**user tried to send file ```\n"+path+"\n``` but not able to view in the chat**\n";
-        break;
+        this->input_pool[this->push_in].message+="\n**user tried to send file ```\n"+path+"\n``` which cant be view neither from the chat nor via a fetch tool**\n";
+        return "this file "+path+" is found but not in the list of supported files\n";
     case IMAGE:
-        cout<<"adding a image\n";
         this->input_pool[this->push_in].image.clear();
         this->input_pool[this->push_in].image+=decode_image(path);
-        break;
+        return "add a image "+path+"\n";
     case DOCUMENT:
-        std::cout << "adding a text file\n";
         this->input_pool[this->push_in].message.clear();
         this->input_pool[this->push_in].message+=decode_txt(path);
-        break;
+        return "add a text "+path+" \n";
     case AUDIO:
-        cout<<"adding a audio\n";
         this->input_pool[this->push_in].message.clear();
         this->input_pool[this->push_in].message+=decode_audio(path);
-        break;
+        return "add a audio "+path+" \n";
     case VIDEO:
-        cout<<"adding a video\n";
         this->input_pool[this->push_in].message.clear();
         this->input_pool[this->push_in].message+=decode_video(path);
-        break;    
+        return "add a video "+path+" \n";
     default:
-    
-        cout<<"Unexpected file type\n";
-        break;
-    }
-    
+        return "Unexpected file type\n";
+    }    
 }
 
 string sagtlib::Agent::config(const string& option){
@@ -153,8 +81,21 @@ string sagtlib::Agent::config(const string& option){
     }
     sss.seekg(1,ios::cur);
     getline(sss,value);
-    int value_int=set_int(value);
-    float value_float=set_float(value);
+    int value_int;
+    float value_float;
+    {
+        try{
+            value_int=stoi(value);
+        }catch(const exception e){
+            value_int=-23;
+        }
+        stringstream ss(value);
+        ss>>value_float;
+        if (ss.fail() || !ss.eof()) {
+            value_float=-24.0f;
+        } 
+    }
+    
     switch(choice){
         case 1:
             this->profile.api=(value.empty()?this->profile.api:value);
@@ -223,11 +164,12 @@ string sagtlib::Agent::config(const string& option){
 }
 
 string sagtlib::Agent::help(){
-    string I="System: No Such Command,Available:\n";
+    string I="No Such Command,Available:\n";
     I+="    /exit                     ——terminate this session and this agent\n";
-    I+="    /reload                   ——reload config for this agent\n";
+    I+="    /relop                    ——reload profile for this agent\n";
+    I+="    /reloh                    ——reload chat for this agent\n";
     I+="    /save 'h'/'p'             ——choose to save history(h) or config profile(p)\n";
-    I+="    /config <integer> <value> ——set different parameter According to the <integar> (0~11) as <value>\n";
+    I+="    /config <int> <value>     ——set different profile parameter\n";
     I+="    /file <path>              ——To insert a local file in the chat to send, will only apply to the next sending session\n";
     return I;
 }
@@ -249,5 +191,3 @@ string sagtlib::Agent::help_model(){
     for(int i=0;i<5;i++)if(!models[this->profile.provider][i].empty())I+="    "+to_string(i)+". "+models[this->profile.provider][i]+"\n";
     return I;
 }
-
-

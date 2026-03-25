@@ -1,8 +1,5 @@
 #ifndef SYDATA
 #define SYDATA
-#define WORKING 0
-#define READY 1
-#define FAILED 0
 
 #ifdef DEFINE_TOOL
 #undef DEFINE_TOOL 
@@ -17,54 +14,8 @@
 #define OPEN_ROUTE_SIZE sizeof(models_open_router) / sizeof(models_open_router[0])
 #endif
 
-#include "../json/json.hpp"
+//#include "../json/json.hpp"
 #include <string>
-#include <deque>
-#include <unordered_map>
-static const std::string base64_chars = 
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    "abcdefghijklmnopqrstuvwxyz"
-    "0123456789+/";
-static nlohmann::json post_error = {{"error", true},{"message", "Request failed"},{"code", -999},{"data", ""}};
-
-static nlohmann::json default_reply={{"role","assistant"},{"content","ummm..."}};
-
-enum input_from{
-    CLT_input,
-    NET_input
-};
- 
-struct inputs_{
-    std::string message;
-    std::string image;
-    input_from type;
-};  
-
-struct SKILL{
-    nlohmann::json definition;
-    std::function<std::string(const std::string*)> Actual_tool;
-    bool state;
-    std::vector<std::string> parameter_format;
-};
-
-struct Model_setup{
-    std::string name;
-    std::string whoyouare;//
-    std::string api;
-    int provider;//LLM provider,currently Deepseek and xai
-    int model;//LLM model,Varies from provider
-    int openroute_model;
-    int max_tokens;//token limites the costs
-    bool stream;//stream output/NOT AVAILABLE YET
-    float temperature;//temperature to make LLM speak within a Concentrated or Deviated mind 
-    float top_p;//Percentage limitation for the Sum of top Possible output characters
-    size_t max_message;//how many meesages will be stored
-    std::string tool_choice;//Manage single tool Validity
-    int chat_state;
-    int working_count;
-    int fail_count;
-};
-
 const std::string models[][5]={
     {"deepseek-chat","deepseek-reasoner","","",""},
     {"gpt-4o","gpt-4o-mini","gpt-4-turbo","",""},
@@ -91,53 +42,4 @@ const std::string urls[][2]={
     {"https://openrouter.ai/api/v1/chat/completions","OpenRouter"}
 };
 
-enum FileCategory {
-    NOT_SUPPORTED,
-    NO_MARCH,
-    IMAGE,
-    DOCUMENT,
-    AUDIO,
-    VIDEO,
-    ZIP,
-    BIN,
-    CATEGORY_COUNT
-};
-
-static std::unordered_map<std::string, FileCategory> file_type_map = {
-    // image file 12 types
-    {".jpg", IMAGE}, {".jpeg", IMAGE}, {".jpe", IMAGE},
-    {".jfif", IMAGE}, {".jif", IMAGE}, {".png", IMAGE},
-    {".webp", IMAGE}, {".gif", IMAGE}, {".bmp", IMAGE},
-    {".dib", IMAGE}, {".tiff", IMAGE}, {".tif", IMAGE},
-    
-    // text file 28 types
-    {".pdf", DOCUMENT}, {".txt", DOCUMENT}, {".text", DOCUMENT},
-    {".csv", DOCUMENT}, {".pptx", DOCUMENT}, {".ppt", DOCUMENT},
-    {".docx", DOCUMENT}, {".doc", DOCUMENT}, {".xlsx", DOCUMENT},
-    {".xls", DOCUMENT}, {".html", DOCUMENT}, {".htm", DOCUMENT},
-    {".json", DOCUMENT}, {".h", DOCUMENT}, {".cpp", DOCUMENT},
-    {".py", DOCUMENT}, {".java", DOCUMENT}, {".js", DOCUMENT},
-    {".ts", DOCUMENT}, {".c", DOCUMENT}, {".cs", DOCUMENT},
-    {".php", DOCUMENT}, {".rb", DOCUMENT}, {".go", DOCUMENT},
-    {".rs", DOCUMENT}, {".swift", DOCUMENT}, {".kt", DOCUMENT},
-    {".md", DOCUMENT},
-    
-    // audio file 9 types
-    {".mp3", AUDIO}, {".mp4", AUDIO}, {".m4a", AUDIO},
-    {".wav", AUDIO}, {".flac", AUDIO}, {".aac", AUDIO},
-    {".ogg", AUDIO}, {".oga", AUDIO}, {".wma", AUDIO},
-    
-    // video file 8 types
-    {".mp4", VIDEO}, {".m4v", VIDEO}, {".mov", VIDEO},
-    {".avi", VIDEO}, {".mkv", VIDEO}, {".webm", VIDEO},
-    {".flv", VIDEO}, {".wmv", VIDEO},
-    
-    // zip files 
-    {".zip", ZIP}, {".rar", ZIP}, {".7z", ZIP},
-    {".tar", ZIP}, {".gz", ZIP},
-    
-    // binary files
-    {".exe", BIN}, {".dll", BIN}, {".bin", BIN}
-};
- 
 #endif

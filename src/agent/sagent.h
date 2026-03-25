@@ -8,60 +8,113 @@
 #include <mutex>
 #include "vector"
 #include "../api/syagent_interface.h"
-#include "../data/sydata.h"
 #include "../json/json.hpp"
 #define sleep_2 usleep(350 * 1000); 
 #define CURRENT this->profile
+#define WORKING 0
+#define READY 1
+#define FAILED 0
+enum input_from{
+    CLI_input,
+    NET_input
+};
  
-//"data:image/jpeg;base64,<BASE64_string>"
+struct inputs_{
+    std::string message;
+    std::string image;
+    input_from type;
+};  
+
+struct SKILL{
+    nlohmann::json definition;
+    std::function<std::string(const std::string*)> Actual_tool;
+    bool state;
+    std::vector<std::string> parameter_format;
+};
+
+struct Model_setup{
+    std::string name;
+    std::string whoyouare;//
+    std::string api;
+    int provider;//LLM provider,currently Deepseek and xai
+    int model;//LLM model,Varies from provider
+    int openroute_model;
+    int max_tokens;//token limites the costs
+    bool stream;//stream output/NOT AVAILABLE YET
+    float temperature;//temperature to make LLM speak within a Concentrated or Deviated mind 
+    float top_p;//Percentage limitation for the Sum of top Possible output characters
+    size_t max_message;//how many meesages will be stored
+    std::string tool_choice;//Manage single tool Validity
+    
+};
 
 namespace sagtlib{
-class Agent : public sagent
-{
-public:
-    Agent(const std::string &home, const std::string &room);
-    ~Agent();
-    //main Logic
-    void load();
-    void register_tool(const std::string definition_[][5], size_t, std::function<std::string(const std::string *)>) override;
-    nlohmann::json get_skills();
-    void handle_tool_request(nlohmann::json *);
-    nlohmann::json run_tool(size_t, nlohmann::json *);
-    std::string send();
-    void start_thread();
-    void stop_thread();
-    void listen_input_thread();
-    void push_input(int web_or_cli,const std::string& text ) override;
-    void save(const std::string &choice);
-    //config and settings
-    std::string help();
-    std::string help_provider();
-    std::string help_model();
-    std::string help_open_route_model();
-    std::string config(const std::string &);
-    //Interface functions
-    void direct_chat_session() override;
-    void cout_to_web(const std::string&);
-    void attach_file(const std::string&);
-    //Network Socket
-
-
-private:
-    Model_setup profile;
-    std::deque<nlohmann::json> message_pool;
-    inputs_ input_pool[5];
-    int push_in;
-    int push_out;
-    int queued_input;
-    bool image_attached;
-    std::vector<SKILL> SKILLs;
-    std::unordered_map<std::string, size_t> SKILL_map;
-    std::string home;
-    std::string room;
-    std::mutex input_mutex;
-    std::thread monitoring;
-    bool on;
-};
+    class Agent : public sagent
+    {
+    public:
+        //stage 1
+        Agent(const std::string &home, const std::string &room);//home/room would be used as workspace Folder,where room is the name of agent instance
+        ~Agent();
+        void register_tool(const std::string definition_[][5], size_t, std::function<std::string(const std::string *)>) override;
+        nlohmann::json run_tool(size_t, nlohmann::json *);//run tool
+        nlohmann::json get_skills();//get tool discriptions from Assigned tool array
+        void handle_tool_request(nlohmann::json *);//Parse what tool and parameter need to use
+        std::string send();//send message 
+        std::string load_cfg();//load config from home/room/ , would not reload chat history
+        std::string save(const std::string &choice);//to save whether config or chat history to home/room/
+        std::string load_cht(const std::string&);//to locd cached chat from workspace
+        //stage 2
+        void push_input(int web_or_cli,const std::string& text ) override;//to add a new message to prepare for handling
+        void start_main_thread();//start instance thread
+        void start_server_thread(std::string& port)override;//start listening to server
+        void stop_server_thread()override;
+        void stop_all_thread();//stop instance thread
+        void listen_input();//loop to check whether to send message
+        //stage 3
+        void interface()override;
+        void send_message();
+        std::string attach_file(const std::string&);//to attach a file in the next message
+        std::string config(const std::string &);//set config 
+        std::string help();//return help message
+        std::string help_provider();//return help message
+        std::string help_model();//return help message
+        std::string help_open_route_model();//return help message
+        //Network Socket
+        //void cout_to_web(nlohmann::json* to_send ,const std::string&);
+        void cout_to_web(const std::string&,int,int);
+        void cout_to_web(const std::string&,int);
+        void cout_to_web(const std::string&);
+        void start_server();//start server and bind on a specified port
+        void stop_server();//stop server
+        void listen_server();//loop to wait and handle port Requests
+        
+    private:
+        Model_setup profile;//a Structure Containing all the configs of LLM
+        std::deque<nlohmann::json> message_pool;//all the mssages
+        //inputs buffer and indications
+        inputs_ input_pool[5];
+        int queued_input;
+        int push_in;
+        int push_out;
+        bool image_attached;
+        int chat_state;
+        int working_count;
+        int fail_count;
+        //server socket number disturbed by kernel 
+        int socket_num;
+        int socket_client_1;
+        //to load the built in skills and user customised tools
+        std::vector<SKILL> SKILLs;        
+        std::unordered_map<std::string, size_t> SKILL_map;
+        //home/room will be used as the workspace of the agent. room would be the name of agent
+        std::string home;
+        std::string room;
+        //the Multi thread setting , by Default there are two threads 
+        std::mutex input_mutex;  
+        std::thread main_thread; 
+        std::thread server_thread;
+        //whether the thread function should be force to stop to end the whole Process
+        bool on;
+    };
 }
-
 #endif

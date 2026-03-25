@@ -1,14 +1,12 @@
 #include <string>
 #include <iostream>
 #include <sstream>
-#include <unistd.h>
 #include "syagent_interface.h"
-#include "../mannager/smannager.h"
+//#include "../mannager/smannager.h"
 #include "../agent/sagent.h"
 #include "../local_tool/cli_tool.h"
 #include "../data/sydata.h"
-#include "../utils/utils.h"
-#define sleep_3 usleep(300*1000);
+#include "../utils/json/utils_json.h"
 
 using namespace std;
 
@@ -24,19 +22,21 @@ sagtlib::sagent* sagtlib::sagent::create(const char* home,const string& room){
     return A;
 }
 
+
 void sagtlib::sagent::destroy(sagtlib::sagent* instance){
     delete instance;
 }
-sagtlib::sagent_mannager* sagtlib::sagent_mannager::create(){
-    sagtlib::manager* A=new sagtlib::manager();
-    return A;
 
-}
-void sagtlib::sagent_mannager::destroy(sagtlib::sagent_mannager* A){
-    delete A ;
-}
-sagtlib::sagent_mannager::~sagent_mannager(){
-    
-}
 sagtlib::sagent::~sagent() {}
 
+// sagtlib::sagent_mannager* sagtlib::sagent_mannager::create(){
+//     sagtlib::manager* A=new sagtlib::manager();
+//     return A;
+
+// }
+// void sagtlib::sagent_mannager::destroy(sagtlib::sagent_mannager* A){
+//     delete A ;
+// }
+// sagtlib::sagent_mannager::~sagent_mannager(){
+    
+// }

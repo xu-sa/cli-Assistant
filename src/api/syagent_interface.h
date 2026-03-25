@@ -21,22 +21,24 @@ namespace sagtlib{
         bool debugger;
         virtual ~sagent();
         virtual void register_tool(const std::string definition_[][5],size_t,std::function<std::string(const std::string*)> func) = 0;
-        virtual void push_input(int cli_or_web,const std::string& text)=0;
-        //virtual void push_input(const std::string& text)=0;
-        virtual void direct_chat_session()=0;
-        void toggle_debug();
+        virtual void start_server_thread(std::string& port)=0;
+        virtual void stop_server_thread()=0;
+        virtual void push_input(int cli_or_web,const std::string& text)=0;//CLI_or_web defines to where the output and Reply be printed
+        virtual void interface()=0;//to start a termianl-only session for chat Process 
+        int port_num;//the program listen on this port
+        void toggle_debug();//this will give more outputs for referring working states in terminal
         static sagent* create(const char* home,const std::string& room); //-home: indicates the workspace path, recommend to use it as the argument from main entrance function. -room: the name of the agent's setting,Memory files and chat history , will create a new one if not exsist within the '-home' 
         static void destroy(sagent*);
     };
-    class sagent_mannager{
-    public:
-        virtual ~sagent_mannager();
-        virtual void add_agent()=0;
-        virtual void remove_agent()=0;
-        virtual void new_session()=0;
-        static sagent_mannager* create();
-        static void destroy(sagent_mannager*);
-    };
+    // class sagent_mannager{
+    // public:
+    //     virtual ~sagent_mannager();
+    //     virtual void add_agent()=0;
+    //     virtual void remove_agent()=0;
+    //     virtual void new_session()=0;
+    //     static sagent_mannager* create();
+    //     static void destroy(sagent_mannager*);
+    // };
 }
 
 #endif
