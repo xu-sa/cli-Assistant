@@ -35,3 +35,5 @@ int main(int argc,const char** argv) {
     return 0;
 }
 ```
+# Terminal Interface:
+you can use and find Instruction about commands and configs once you have the sagent::interface() function running
