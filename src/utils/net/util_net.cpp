@@ -1,7 +1,10 @@
 #include "utils_net.h"
-#include <string>
 #include <iostream>
-#include <curl/curl.h>
+#ifdef _WIN32
+#include "../../../lib-w/curl/include/curl.h"
+#else
+#include "../../../lib-l/curl/include/curl.h"
+#endif
 #include "../../data/sydata.h"
 #define PRINT_ERROR std::cout<<"Unexpected Error Occurred : 13";
 

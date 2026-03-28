@@ -1,8 +1,14 @@
 #include <iostream>
 #include <fstream>
-#include <unistd.h>
+#ifdef _WIN32
+    #include <windows.h>
+    #define sleep_1 Sleep(300);
+#else
+    #include <unistd.h>
+    #define sleep_1 usleep(300 * 1000);
+#endif
 #include "utils_json.h"
-#define sleep_1 usleep(100 * 1000);
+
 using json=nlohmann::json;
 using namespace std;
 namespace fs = std::filesystem;

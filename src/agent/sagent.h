@@ -1,19 +1,22 @@
 #ifndef SAGENT
 #define SAGENT
 
-#include <string>
 #include <unordered_map>
 #include <deque>
 #include <thread>
+#include <chrono>
 #include <mutex>
 #include "vector"
 #include "../api/syagent_interface.h"
-#include "../json/json.hpp"
-#define sleep_2 usleep(350 * 1000); 
+#ifdef _WIN32
+#include "../../lib-w/json/json.hpp"
+#else
+#include "../../lib-l/json/json.hpp"
+#endif
+#define sleep_2(s) std::this_thread::sleep_for(std::chrono::milliseconds(100*s));
+ 
 #define CURRENT this->profile
-#define WORKING 0
-#define READY 1
-#define FAILED 0
+ 
 enum input_from{
     CLI_input,
     NET_input
@@ -45,7 +48,6 @@ struct Model_setup{
     float top_p;//Percentage limitation for the Sum of top Possible output characters
     size_t max_message;//how many meesages will be stored
     std::string tool_choice;//Manage single tool Validity
-    
 };
 
 namespace sagtlib{
@@ -66,12 +68,12 @@ namespace sagtlib{
         //stage 2
         void push_input(int web_or_cli,const std::string& text ) override;//to add a new message to prepare for handling
         void start_main_thread();//start instance thread
-        void start_server_thread(std::string& port)override;//start listening to server
+        void start_server_thread(const std::string& port)override;//start listening to server
         void stop_server_thread()override;
         void stop_all_thread();//stop instance thread
         void listen_input();//loop to check whether to send message
         //stage 3
-        void interface()override;
+        void terminalsession(bool)override;
         void send_message();
         std::string attach_file(const std::string&);//to attach a file in the next message
         std::string config(const std::string &);//set config 

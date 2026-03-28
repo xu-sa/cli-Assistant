@@ -1,7 +1,6 @@
 //Main function Logic
 #include "sagent.h"
 #include <iostream>
-#include <unistd.h> 
 #include "../data/sydata.h"
 #include "../utils/json/utils_json.h"
 #include "../utils/net/utils_net.h"
@@ -99,7 +98,7 @@ void sagtlib::Agent::handle_tool_request(json* agent_reply){
             };
         }
         std::unordered_map<std::string, size_t>::iterator skill_= this->SKILL_map.find(data["name"]);
-        this->message_pool.push_back(this->run_tool(skill_->second,&data));sleep_2
+        this->message_pool.push_back(this->run_tool(skill_->second,&data));sleep_2(3)
     }
 };
 
@@ -154,7 +153,7 @@ string sagtlib::Agent::send(){
         }
         message_reply=this->profile.name+" : "+reply_context;
         if (agent_reply.contains("tool_calls")){//if there is tool usage
-            this->chat_state=WORKING;
+            this->chat_state=2;
             this->handle_tool_request(&agent_reply);
             return (reply_context.empty()?(this->profile.name+" : "+"calling tool.."):message_reply);
         }else this->message_pool.push_back({{"role",agent_reply["role"]},{"content",agent_reply["content"]}});//if no tool,then reply and end this session
@@ -165,7 +164,7 @@ string sagtlib::Agent::send(){
     }
     this->working_count=0;
     this->fail_count=0;
-    this->chat_state=READY;
+    this->chat_state=1;
     return (message_reply.empty()?(this->profile.name+" : "+".."):message_reply);
 }
 
@@ -219,7 +218,7 @@ string sagtlib::Agent::load_cfg(){
             this->input_pool[i].image="";
         }
         this->image_attached=0;
-        this->chat_state = READY;
+        this->chat_state = 1;
         this->working_count = 0;
         this->fail_count = 0;
     }
@@ -245,7 +244,7 @@ string sagtlib::Agent::load_cht(const string& option){
     json data=handle_read_json(this->home,this->room,I);
     if(data.empty())return "cant use this file as reload chat\n";
     // this->message_pool.clear();
-    // this->message_pool.shrink_to_fit();sleep_2
+    // this->message_pool.shrink_to_fit();sleep_2(3)
     this->message_pool=data;
     return "Reloaded chat history : "+I+"\n";
 }
@@ -282,7 +281,7 @@ sagtlib::Agent::Agent(const string& home,const string& room):home(home),room(roo
 
 sagtlib::Agent::~Agent(){
     this->stop_all_thread();
-    this->message_pool.clear();
-    this->message_pool.shrink_to_fit();
+    
+    sleep_2(1)
     cout<<"agent service terminated..\n";
 }

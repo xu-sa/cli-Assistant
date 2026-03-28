@@ -3,20 +3,28 @@
 #include "../data/sydata.h"
 #include "../utils/file/util_parse_file.h"
 #include <iostream>
-#include <unistd.h>
 #define PRINT_ERROR std::cout<<"Unexpected Error Occurred : 2";
 
 using json=nlohmann::json;
 using namespace std;
 
-void sagtlib::Agent::interface(){//start a terminal session for chating
-    string input;
-    while (this->on)
-    {
-        getline(cin,input);
-        this->push_input(0,input);
-        while (this->queued_input!=0)sleep_2;
-    }   
+void sagtlib::Agent::terminalsession(bool a){//start a terminal session for chating
+    if(!a){
+        while (this->on)
+        {
+            sleep_2(20);
+        }
+        return;
+    }else{
+        string input;
+        while (this->on)
+            {
+                getline(cin,input);
+                this->push_input(0,input);
+                while (this->queued_input!=0)sleep_2(3)
+            }   
+    }
+    cout<<"session ended.\n";
 }
 
 void sagtlib::Agent::send_message(){
@@ -30,10 +38,10 @@ void sagtlib::Agent::send_message(){
     }
     if(this->input_pool[this->push_out].type==NET_input){
         this->cout_to_web(this->send()+"\n");
-        while (this->chat_state!=READY)this->cout_to_web(this->send()+"\n");
+        while (this->chat_state!=1)this->cout_to_web(this->send()+"\n");
     }else {
         cout<<this->send()<<endl;
-        while (this->chat_state!=READY)cout<<this->send()<<endl;
+        while (this->chat_state!=1)cout<<this->send()<<endl;
     }
 }
 
@@ -86,7 +94,7 @@ string sagtlib::Agent::config(const string& option){
     {
         try{
             value_int=stoi(value);
-        }catch(const exception e){
+        }catch(const exception& e){
             value_int=-23;
         }
         stringstream ss(value);

@@ -1,6 +1,5 @@
 #ifndef CLI_TOOL
 #define CLI_TOOL
-#include <string>
 #include "../api/syagent_interface.h"
 DEFINE_TOOL(
     terminal,

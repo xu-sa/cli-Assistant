@@ -1,6 +1,5 @@
-#include <string>
+//#include <string>
 #include <fstream>
-//#include "../../data/sydata.h"
 #include "util_parse_file.h"
 #include <vector>
 //file handler

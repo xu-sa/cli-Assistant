@@ -1,18 +1,17 @@
 #ifndef SYDATA
 #define SYDATA
 
-#ifdef DEFINE_TOOL
-#undef DEFINE_TOOL 
-#define DEFINE_TOOL(Toolname,description,...) const std::string Toolname[][5]={{#Toolname,description,"","",""},__VA_ARGS__};
-#endif
-
-#ifdef REGISTER_TOOL
-#undef REGISTER_TOOL
-#define REGISTER_TOOL(Agent,Definition,Tool) Agent->register_tool(Definition,sizeof(Definition)/sizeof(Definition[0]),Tool)
+// #ifdef DEFINE_TOOL
+// #undef DEFINE_TOOL 
+// #define DEFINE_TOOL(Toolname,description,...) const std::string Toolname[][5]={{#Toolname,description,"","",""},__VA_ARGS__};
+// #endif
+// #ifdef REGISTER_TOOL
+// #undef REGISTER_TOOL
+// #define REGISTER_TOOL(Agent,Definition,Tool) Agent->register_tool(Definition,sizeof(Definition)/sizeof(Definition[0]),Tool)
+// #endif
 #define PROVIDER_SIZE sizeof(urls)/sizeof(urls[0])
 #define MODEL_OPTION 5
 #define OPEN_ROUTE_SIZE sizeof(models_open_router) / sizeof(models_open_router[0])
-#endif
 
 //#include "../json/json.hpp"
 #include <string>

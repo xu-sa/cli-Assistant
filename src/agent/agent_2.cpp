@@ -1,13 +1,12 @@
 //Thread Management
 #include "./sagent.h"
 #include <iostream>
-#include <unistd.h>
 #define PRINT_ERROR std::cout<<"Unexpected Error Occurred : 2";
 using namespace std;
 
 void sagtlib::Agent::push_input(int i,const string& text){//input port
     lock_guard<mutex> locker(this->input_mutex);
-    sleep_2
+    sleep_2(3)
     this->input_pool[this->push_in].message+=text;
     this->input_pool[this->push_in].type=(input_from)i;
     this->push_in=(this->push_in==4?0:this->push_in+1);
@@ -15,17 +14,17 @@ void sagtlib::Agent::push_input(int i,const string& text){//input port
 }
 
 void sagtlib::Agent::start_main_thread(){
-    this->stop_all_thread();sleep_2
+    this->stop_all_thread();sleep_2(3)
     this->on=true;
     this->main_thread=thread(&sagtlib::Agent::listen_input,this);
     cout<<"main thread is on\n";
 }
 
-void sagtlib::Agent::start_server_thread(string& input_port){
+void sagtlib::Agent::start_server_thread(const string& input_port){
     int port;
     try{
         port=stoi(input_port);
-    }catch(const exception e){
+    }catch(const exception& e){
         port=-1;
     }
     this->port_num=port;
@@ -55,16 +54,22 @@ void sagtlib::Agent::stop_server_thread(){
 }
 
 void sagtlib::Agent::stop_all_thread(){
-    this->on = false;
-    if (this->main_thread.joinable())this->main_thread.join();
-    if (this->server_thread.joinable())this->server_thread.join();
-    sleep_2
+    this->on=0;
+    if (this->main_thread.joinable()){
+        this->main_thread.join();
+        std::cout<<"\nagent "<<this->profile.name<<"'s main thread is terminated"<<endl;
+    }
+    if (this->server_thread.joinable()){
+        this->stop_server_thread();
+        std::cout << "server thread terminated.\n";
+    }
+    sleep_2(3)
 }
 
 void sagtlib::Agent::listen_input(){//main loop thread
     while(this->on){
-        sleep_2
-        if(this->queued_input<=0)continue;
+        sleep_2(3)
+        if(this->queued_input==0)continue;
         lock_guard<mutex> locker(this->input_mutex);        
         if(this->input_pool[this->push_out].message[0] == '/')// if user need to Execute commands
         {
@@ -100,12 +105,11 @@ void sagtlib::Agent::listen_input(){//main loop thread
         else if(this->input_pool[this->push_out].type==NET_input)this->send_message();
         else cout<<"unknown input, please use '/' for Instructions\n";
         //clean up buffer
-        sleep_2
+        sleep_2(3)
         this->input_pool[this->push_out].message.clear();
         this->input_pool[this->push_out].image.clear();
         this->push_out=(this->push_out==4?0:this->push_out+1);
         this->queued_input-=1;
         this->image_attached=!(this->input_pool[this->push_out].image=="");
     }
-    cout<<"\nagent "<<this->profile.name<<" is been Suspended."<<endl;
 }

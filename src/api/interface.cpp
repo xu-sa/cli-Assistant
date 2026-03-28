@@ -1,11 +1,11 @@
-#include <string>
-#include <iostream>
-#include <sstream>
-#include "syagent_interface.h"
+//#include "../data/sydata.h"
+//#include <sstream>
+//#include <string>
 //#include "../mannager/smannager.h"
+#include <iostream>
+#include "syagent_interface.h"
 #include "../agent/sagent.h"
 #include "../local_tool/cli_tool.h"
-#include "../data/sydata.h"
 #include "../utils/json/utils_json.h"
 
 using namespace std;
