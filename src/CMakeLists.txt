@@ -6,10 +6,6 @@ else()
 set(LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../lib-l)
 endif()
 find_library(CURL_STATIC_LIB NAMES curl libcurl PATHS ${LIB_DIR}/curl/lib NO_DEFAULT_PATH)
-# find_library(MBEDTLS_LIB NAMES mbedtls PATHS ${LIB_DIR}/mbedtls/lib NO_DEFAULT_PATH)
-# find_library(MBEDCRYPTO_LIB NAMES mbedcrypto PATHS ${LIB_DIR}/mbedtls/lib NO_DEFAULT_PATH)
-# find_library(MBEDX509_LIB NAMES mbedx509 PATHS ${LIB_DIR}/mbedtls/lib NO_DEFAULT_PATH)
-# find_library(ZLIB_STATIC NAMES z zlibstatic zlib PATHS ${LIB_DIR}/zlib/lib NO_DEFAULT_PATH)
 
 if(CURL_STATIC_LIB)
     message(STATUS "Found static curl: ${CURL_STATIC_LIB}")
@@ -34,10 +30,16 @@ if(CURL_STATIC_LIB)
             # ${NORMALIZ}
         )
     else()
+        # find_library(MBEDTLS_LIB NAMES mbedtls PATHS ${LIB_DIR}/mbedtls/lib NO_DEFAULT_PATH)
+        # find_library(MBEDCRYPTO_LIB NAMES mbedcrypto PATHS ${LIB_DIR}/mbedtls/lib NO_DEFAULT_PATH)
+        # find_library(MBEDX509_LIB NAMES mbedx509 PATHS ${LIB_DIR}/mbedtls/lib NO_DEFAULT_PATH)
+        # find_library(ZLIB_STATIC NAMES z zlibstatic zlib PATHS ${LIB_DIR}/zlib/lib NO_DEFAULT_PATH)
+
         find_library(PTHREAD_LIB NAMES pthread)
         find_library(DL_LIB NAMES dl)
         find_library(RT_LIB NAMES rt) 
         set(CURL_LIBRARIES
+            
             ${CURL_STATIC_LIB}
             # ${MBEDTLS_LIB}
             # ${MBEDCRYPTO_LIB}
@@ -65,7 +67,6 @@ add_library(SYagent STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/local_tool/cli_tool.cpp
 )
 
-
 target_include_directories(SYagent PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/data
     ${CMAKE_CURRENT_SOURCE_DIR}/utils
@@ -77,18 +78,15 @@ target_include_directories(SYagent PUBLIC
 if(WIN32)
     target_include_directories(SYagent PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/../lib-w/json
-        # ${CMAKE_CURRENT_SOURCE_DIR}/../lib-w/mbedtls/include
-        # ${CMAKE_CURRENT_SOURCE_DIR}/../lib-w/zlib/include
         ${CMAKE_CURRENT_SOURCE_DIR}/../lib-w/curl/include
     )
 else()
     target_include_directories(SYagent PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/../lib-l/json
-        # ${CMAKE_CURRENT_SOURCE_DIR}/../lib-l/mbedtls/include
-        # ${CMAKE_CURRENT_SOURCE_DIR}/../lib-l/zlib/include
         ${CMAKE_CURRENT_SOURCE_DIR}/../lib-l/curl/include
     )
 endif()
+
 target_precompile_headers(SYagent PRIVATE
     <string>
     <vector>
@@ -98,7 +96,6 @@ target_compile_features(SYagent PUBLIC cxx_std_17)
 
 target_link_libraries(SYagent PRIVATE ${CURL_LIBRARIES})
 
- 
 if(WIN32)
 target_link_libraries(SYagent PRIVATE 
         ws2_32#provide windows socket

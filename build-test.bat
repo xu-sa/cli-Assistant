@@ -1,6 +1,5 @@
 g++ -std=c++17 -static -DCURL_STATICLIB ^
 -I./lib-w/curl/include ^
--I./lib-w/json ^
 -I./test/lib test/main.cpp ^
 -Wl,--start-group ^
 ./test/lib/libSLagent-w.a ^
