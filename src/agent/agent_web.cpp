@@ -16,35 +16,89 @@
     #define CLOSE_SOCKET close
     #define SHUTDOWN(sock, how) shutdown(sock, how)
 #endif
-
+#define PRINT_ERROR std::cout<<"Unexpected Error Occurred : 8";
 using json = nlohmann::json;
 
-void sagtlib::Agent::cout_to_web(const std::string& data){
+static void handle_client_in(sagtlib::Agent* agent,int socket){
+    char buffer[1024 * 4] = {0};
+    size_t body_content_info;
+    std::string buffer_string;
+    int bytes_count;
+    int head_end;
+   
+    while (1) {//stat to receive head content
+        // recv
+        int n = recv(socket, buffer, sizeof(buffer) - 1, 0);
+        if (n <= 0) break; 
+        
+        buffer[n] = '\0';
+        buffer_string.append(buffer, n);
+        head_end = buffer_string.find("\r\n\r\n");
+        if (head_end == std::string::npos) continue;
+        
+        body_content_info = buffer_string.find("Content-Length: ");
+        break;
+    }
+
+    if (body_content_info == std::string::npos) {
+        // handle GET request
+        agent->respond_socket(agent->help());// post a data here
+        CLOSE_SOCKET(socket);
+    }
+
+    { // start to Receive json content
+        try {
+            int i = std::stoul(buffer_string.substr(body_content_info + 16)); 
+            size_t content_got = buffer_string.length() - (head_end + 4);
+            while (content_got < (size_t)i) {
+                int n = recv(socket, buffer, sizeof(buffer) - 1, 0);
+                if (n <= 0) break;
+                buffer[n] = '\0';
+                buffer_string.append(buffer, n);
+                content_got += n;
+            }
+        } catch (...) {
+            std::cout<<"Error code 3\n";
+            CLOSE_SOCKET(socket);
+        }
+    }
+
+    try{ // handle POST request
+        json j = json::parse(buffer_string.substr(head_end + 4));
+        if (!j["m"].empty())agent->push_input(socket, j["m"]);//push in message
+        else {
+            CLOSE_SOCKET(socket);
+        }
+    } catch (const std::exception& e) { // client Post a unparsable data
+        std::cout << "Unexpected error: " << e.what() << "\n";
+        agent->respond_socket(e.what(),-1);// post a data here
+        CLOSE_SOCKET(socket);
+    }
+
+}
+
+void sagtlib::Agent::respond_socket(const std::string& data){
+    if(data==""){
+        CLOSE_SOCKET(this->input_pool[this->push_out].client_socket);
+        return;
+    };
     json to_send;
     to_send["m"]=data;
     to_send["status"]=(data!=""?1:0);
     std::string response_str = to_send.dump();
     std::string http_response="HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Lenth: "+std::to_string(response_str.length())+"\r\n\r\n"+response_str;
-    ::send(this->socket_client_1,http_response.c_str(),http_response.length(),0);
+    ::send(this->input_pool[this->push_out].client_socket,http_response.c_str(),http_response.length(),0);
 };
 
-void sagtlib::Agent::cout_to_web(const std::string& data,int type){
+void sagtlib::Agent::respond_socket(const std::string& data,int type){
+    if(data=="")CLOSE_SOCKET(this->input_pool[this->push_out].client_socket);
     json to_send;
     to_send["m"]=data;
     to_send["status"]=type;
     std::string response_str = to_send.dump();
     std::string http_response="HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Lenth: "+std::to_string(response_str.length())+"\r\n\r\n"+response_str;
-    ::send(this->socket_client_1,http_response.c_str(),http_response.length(),0);
+    ::send(this->input_pool[this->push_out].client_socket,http_response.c_str(),http_response.length(),0);
 };
-
-void sagtlib::Agent::cout_to_web(const std::string& data,int type,int socket){
-    json to_send;
-    to_send["m"]=data;
-    to_send["status"]=(data!="");
-    std::string response_str = to_send.dump();
-    std::string http_response="HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Lenth: "+std::to_string(response_str.length())+"\r\n\r\n"+response_str;
-    ::send(socket,http_response.c_str(),http_response.length(),0);
-}
 
 void sagtlib::Agent::start_server() {
     #ifdef _WIN32//Optimization for windows
@@ -54,7 +108,10 @@ void sagtlib::Agent::start_server() {
             return;
         }
     #endif
-    this->stop_server();sleep_2(2)
+    //this->stop_server();
+
+    sleep_2(3);
+    
     this->socket_num = socket(AF_INET, SOCK_STREAM, 0);
     
     if (this->socket_num == -1) { 
@@ -83,7 +140,7 @@ void sagtlib::Agent::start_server() {
         CLOSE_SOCKET(this->socket_num);
         return;
     }
-    std::cout << "Listening on port " << this->port_num << "\n";
+    
 }
 
 void sagtlib::Agent::stop_server() {
@@ -95,83 +152,16 @@ void sagtlib::Agent::stop_server() {
         #endif
         CLOSE_SOCKET(this->socket_num);
         this->socket_num = -1;
+        std::cout<<"stopped server\n";
     }
 }
 
 void sagtlib::Agent::listen_server() {
-    char buffer[1024 * 4] = {0};
-    int bytes_count;
-    int head_end;
-    size_t body_content_info;
-    std::string buffer_string;
-
     while (this->on && this->socket_num != -1) {
-        buffer_string.clear();
         sleep_2(2);
-        this->socket_client_1 = accept(this->socket_num, nullptr, nullptr);
-        if(this->socket_num==-1){
-            break;
-        }else
-        if (this->socket_client_1 == -1) {
-            // handle error
-            this->cout_to_web("");
-            std::cout << "error request from client\n";
-            continue;
-        }
-
-        std::cout << "got one client connecting to socket " << this->socket_client_1 << "\n";
-
-        while (1) {
-            // recv
-            int n = recv(this->socket_client_1, buffer, sizeof(buffer) - 1, 0);
-            if (n <= 0) break; 
-            
-            buffer[n] = '\0';
-            buffer_string.append(buffer, n);
-            head_end = buffer_string.find("\r\n\r\n");
-            if (head_end == std::string::npos) continue;
-            
-            body_content_info = buffer_string.find("Content-Length: ");
-            break;
-        }
-
-        if (body_content_info == std::string::npos) {
-            // handle GET request
-            this->cout_to_web(this->help());
-            CLOSE_SOCKET(this->socket_client_1);
-            continue;
-        }
-
-        { // start to Receive json content
-            try {
-                int i = std::stoul(buffer_string.substr(body_content_info + 16)); 
-                size_t content_got = buffer_string.length() - (head_end + 4);
-                while (content_got < (size_t)i) {
-                    int n = recv(this->socket_client_1, buffer, sizeof(buffer) - 1, 0);
-                    if (n <= 0) break;
-                    buffer[n] = '\0';
-                    buffer_string.append(buffer, n);
-                    content_got += n;
-                }
-            } catch (...) {
-                 CLOSE_SOCKET(this->socket_client_1);
-                 continue;
-            }
-        }
-
-        try { // handle POST request
-            json j = json::parse(buffer_string.substr(head_end + 4));
-            if (!j["m"].empty()) {
-                this->push_input(1, j["m"]);
-                while (this->queued_input != 0) sleep_2(3)
-            } else {
-                this->cout_to_web("");
-            }
-        } catch (const std::exception& e) { // client Post a unparsable data
-            std::cout << "Unexpected error: " << e.what() << "\n";
-            this->cout_to_web(e.what(),-1);
-        }
-        
-        CLOSE_SOCKET(this->socket_client_1);
+        int socket_in=accept(this->socket_num, nullptr, nullptr);
+        if (socket_in == -1)break;
+        std::cout << "got one client connecting to socket " << socket_in << "\n";
+        handle_client_in(this,socket_in);
     }
 }

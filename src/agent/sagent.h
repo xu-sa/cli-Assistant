@@ -14,18 +14,13 @@
 #include "../../lib-l/json/json.hpp"
 #endif
 #define sleep_2(s) std::this_thread::sleep_for(std::chrono::milliseconds(100*s));
- 
+#define INPUT_POOL_SIZE 10
 #define CURRENT this->profile
- 
-enum input_from{
-    CLI_input,
-    NET_input
-};
  
 struct inputs_{
     std::string message;
     std::string image;
-    input_from type;
+    int client_socket;
 };  
 
 struct SKILL{
@@ -66,7 +61,7 @@ namespace sagtlib{
         std::string save(const std::string &choice);//to save whether config or chat history to home/room/
         std::string load_cht(const std::string&);//to locd cached chat from workspace
         //stage 2
-        void push_input(int web_or_cli,const std::string& text ) override;//to add a new message to prepare for handling
+        void push_input(int socket,const std::string& text ) override;//to add a new message to prepare for handling
         void start_main_thread();//start instance thread
         void start_server_thread(const std::string& port)override;//start listening to server
         void stop_server_thread()override;
@@ -74,7 +69,7 @@ namespace sagtlib{
         void listen_input();//loop to check whether to send message
         //stage 3
         void terminalsession(bool)override;
-        void send_message();
+        void handle_input();
         std::string attach_file(const std::string&);//to attach a file in the next message
         std::string config(const std::string &);//set config 
         std::string help();//return help message
@@ -82,10 +77,9 @@ namespace sagtlib{
         std::string help_model();//return help message
         std::string help_open_route_model();//return help message
         //Network Socket
-        //void cout_to_web(nlohmann::json* to_send ,const std::string&);
-        void cout_to_web(const std::string&,int,int);
-        void cout_to_web(const std::string&,int);
-        void cout_to_web(const std::string&);
+        void respond_socket(const std::string&,int);
+        void respond_socket(const std::string&);
+        //void cout_to_web(int socket,const std::string&);
         void start_server();//start server and bind on a specified port
         void stop_server();//stop server
         void listen_server();//loop to wait and handle port Requests
@@ -94,17 +88,16 @@ namespace sagtlib{
         Model_setup profile;//a Structure Containing all the configs of LLM
         std::deque<nlohmann::json> message_pool;//all the mssages
         //inputs buffer and indications
-        inputs_ input_pool[5];
+        inputs_ input_pool[INPUT_POOL_SIZE];
         int queued_input;
         int push_in;
         int push_out;
-        bool image_attached;
+        //bool image_attached;
         int chat_state;
         int working_count;
         int fail_count;
         //server socket number disturbed by kernel 
         int socket_num;
-        int socket_client_1;
         //to load the built in skills and user customised tools
         std::vector<SKILL> SKILLs;        
         std::unordered_map<std::string, size_t> SKILL_map;

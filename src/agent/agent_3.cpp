@@ -3,46 +3,92 @@
 #include "../data/sydata.h"
 #include "../utils/file/util_parse_file.h"
 #include <iostream>
-#define PRINT_ERROR std::cout<<"Unexpected Error Occurred : 2";
-
+#define PRINT_ERROR std::cout<<"Unexpected Error Occurred : 7";
 using json=nlohmann::json;
 using namespace std;
 
 void sagtlib::Agent::terminalsession(bool a){//start a terminal session for chating
+    string input;
     if(!a){
         while (this->on)
         {
-            sleep_2(20);
+            sleep_2(2);
+            cout<<"\n>>";
+            getline(cin,input);
+            if(input=="/exit")break;   
         }
-        return;
     }else{
-        string input;
         while (this->on)
             {
                 getline(cin,input);
-                this->push_input(0,input);
+                this->push_input(-1,input);
                 while (this->queued_input!=0)sleep_2(3)
             }   
     }
     cout<<"session ended.\n";
 }
 
-void sagtlib::Agent::send_message(){
-    if(this->input_pool[this->push_out].message[0]=='/')this->input_pool[this->push_out].message.erase(0,6);
-    if(!this->image_attached)this->message_pool.push_back({{"role","user"},{"content",this->input_pool[this->push_out].message}});
-    else{
-        json content=json::array();
-        content.push_back({{"type","text"},{"text",this->input_pool[this->push_out].message}});
-        content.push_back({{"type", "image_url"},{ "image_url",{{"url",this->input_pool[this->push_out].image}}}});//data:image/png;base64,iVBO.....
-        this->message_pool.push_back({{"role","user"},{"content",content}});
+void sagtlib::Agent::handle_input(){
+    bool is_command=(this->input_pool[this->push_out].message[0] == '/'?1:0);
+    int to_send=0;
+    if(is_command){// if user need to Execute commands
+        string command ,value;
+        istringstream ss(this->input_pool[this->push_out].message);
+        {
+            ss>>command;
+            ss.seekg(1,ios::cur);//jump over space Between command and value 
+            getline(ss,value);
+        }
+        
+        if(this->input_pool[this->push_out].client_socket==-1){
+            if(command=="/exit")this->on=0;
+            else if(command=="/save")cout<<this->save(value);
+            else if(command=="/relop")cout<<this->load_cfg();
+            else if(command=="/reloh")cout<<this->load_cht(value);
+            else if(command=="/file")cout<<this->attach_file(value);
+            else if(command=="/config")cout<<this->config(value);
+            else if(command=="/serveron")this->start_server_thread(value);//only for terminal
+            else if(command=="/serveroff")this->stop_server_thread();//only for terminal
+            else if(command=="/send")to_send=-1;//only for terminal
+            else cout<<this->help()<<"Commands below are only Available for this termial:\n"
+                                    <<"    /serveron <int>           ——start server on Specified port\n"
+                                    <<"    /serveroff                ——stop server\n"
+                                    <<"    /send <any>               ——to send message to agent\n";
+        }else if(this->input_pool[this->push_out].client_socket>=4){
+            if(command=="/exit")this->on=0;
+            else if(command=="/save")this->respond_socket(this->save(value));
+            else if(command=="/relop")this->respond_socket(this->load_cfg());
+            else if(command=="/reloh")this->respond_socket(this->load_cht(value));
+            else if(command=="/file")this->respond_socket(this->attach_file(value));
+            else if(command=="/config")this->respond_socket(this->config(value));
+            else this->respond_socket(this->help());
+
+            this->respond_socket("");//close socket
+        
+        }else PRINT_ERROR
     }
-    if(this->input_pool[this->push_out].type==NET_input){
-        this->cout_to_web(this->send()+"\n");
-        while (this->chat_state!=1)this->cout_to_web(this->send()+"\n");
-    }else {
-        cout<<this->send()<<endl;
-        while (this->chat_state!=1)cout<<this->send()<<endl;
-    }
+    else if(this->input_pool[this->push_out].client_socket>=4)to_send=1;
+    else if(this->input_pool[this->push_out].client_socket==-1)cout<<"unknown input, please use '/' for Instructions: "<<this->input_pool[this->push_out].message<<endl;
+    else PRINT_ERROR;
+    if(to_send!=0){//meaning a message needs to be sent
+        if(this->input_pool[this->push_out].image=="")this->message_pool.push_back({{"role","user"},{"content",this->input_pool[this->push_out].message}});
+        else{//if there is a image attached 
+            json content=json::array();
+            content.push_back({{"type","text"},{"text",this->input_pool[this->push_out].message}});
+            content.push_back({{"type", "image_url"},{ "image_url",{{"url",this->input_pool[this->push_out].image}}}});//data:image/png;base64,iVBO.....
+            this->message_pool.push_back({{"role","user"},{"content",content}});
+        } 
+        std::cout<<"this message will be send to "<<(to_send==1?"server socket\n":"local terminal\n");
+        if(to_send==1){
+            this->respond_socket(this->send()+"\n");
+            while (this->chat_state!=1)this->respond_socket(this->send()+"\n");
+            this->respond_socket("");//close socket
+        }
+        else{
+            cout<<this->send()<<endl;
+            while (this->chat_state!=1)cout<<this->send()<<endl;
+        }
+    }else return;
 }
 
 string sagtlib::Agent::attach_file(const std::string& path){

@@ -4,7 +4,7 @@
 #include "../data/sydata.h"
 #include "../utils/json/utils_json.h"
 #include "../utils/net/utils_net.h"
-#define PRINT_ERROR std::cout<<"Unexpected Error Occurred : 1";
+#define PRINT_ERROR std::cout<<"Unexpected Error Occurred : 5";
 using namespace std;
 using json=nlohmann::json;
 static nlohmann::json default_reply={{"role","assistant"},{"content","ummm..."}};
@@ -47,7 +47,7 @@ json sagtlib::Agent::run_tool(size_t index,json* data){
         {//get result from tool and build the json
             string res=this->SKILLs[index].Actual_tool(data_);
             if((*data)["name"]=="get_image"){//if using image tool
-                this->image_attached=1;
+               //this->image_attached=1;
                 json content=json::array();
                 content.push_back({{"type","text"},{"text","Image is Fetched Successfully."}});
                 content.push_back({{"type", "image_url"},{"image_url",{{"url",res}} }});//data:image/png;base64,iVBO.....
@@ -123,7 +123,7 @@ string sagtlib::Agent::send(){
         request_body["tool_choice"] =this->profile.tool_choice;
     }
     
-    if(this->image_attached){//if there is a image base64 string in the message
+    if(this->input_pool[this->push_out].image!=""){//if there is a image base64 string in the message
         if(this->message_pool.back()["role"]=="tool"){//and its from a tool
             if(this->debugger)cout<<"cleaning up the image cache from tool calling\n";
             this->message_pool.back()["content"].clear();
@@ -137,7 +137,6 @@ string sagtlib::Agent::send(){
             this->message_pool.back()["content"].clear();
             this->message_pool.back()["content"]=message+"\n**there was a one-time-view image, you can require it if you need**";
         }
-        this->image_attached=0;
     }
     
     json agent_reply = handle_post(urls[this->profile.provider][0],this->profile.api,&request_body);
@@ -158,10 +157,12 @@ string sagtlib::Agent::send(){
             return (reply_context.empty()?(this->profile.name+" : "+"calling tool.."):message_reply);
         }else this->message_pool.push_back({{"role",agent_reply["role"]},{"content",agent_reply["content"]}});//if no tool,then reply and end this session
     }
+    
     else{//if http Response is not Succeed
         this->message_pool.push_back(default_reply);//this Prevents broken message Sequence
-        cout<<"Error: "<<agent_reply["code_"]<<" # type:"<<agent_reply["error_type"]<<" # message:"<<agent_reply["error_message"]<<endl;
+        return "LLM error: "+to_string(agent_reply["code_"])+" #type:"+to_string(agent_reply["error_type"])+" #message:"+to_string(agent_reply["error_message"]);
     }
+    
     this->working_count=0;
     this->fail_count=0;
     this->chat_state=1;
@@ -212,22 +213,12 @@ string sagtlib::Agent::load_cfg(){
     }
     
     {//input buffer 
-        for (int i = 0; i < 5; i++) {
-            this->input_pool[i].image="";
-            this->input_pool[i].type=CLI_input;
-            this->input_pool[i].image="";
-        }
-        this->image_attached=0;
+        
+        //this->image_attached=0;
         this->chat_state = 1;
         this->working_count = 0;
         this->fail_count = 0;
     }
-    
-    {//server setting
-        this->port_num=9981;//default port
-        this->socket_num=-1;//as a sign of stop listening port
-    }
-    
     this->on=1;
     return "Initiated agent "+this->profile.name+"\n";
 }
@@ -273,15 +264,21 @@ string sagtlib::Agent::save(const string& choice){
 
 sagtlib::Agent::Agent(const string& home,const string& room):home(home),room(room){
     cout<<this->load_cfg();
+    {//server setting
+        this->port_num=9981;//default port
+        this->socket_num=-1;//as a sign of stop listening port
+    }
     this->start_main_thread();
-//    this->start_server_thread();
+    for (int i = 0; i < INPUT_POOL_SIZE; ++i) {
+        this->input_pool[i] = inputs_{};
+    }
     this->push_in=0;
     this->push_out=0;
+    this->queued_input=0;
 }
 
 sagtlib::Agent::~Agent(){
     this->stop_all_thread();
-    
     sleep_2(1)
     cout<<"agent service terminated..\n";
 }
