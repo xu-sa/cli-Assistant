@@ -78,7 +78,7 @@ namespace sagtlib{
         std::string help_open_route_model();//return help message
         //Network Socket
         void respond_socket(const std::string&,int);
-        void respond_socket(const std::string&);
+        // void respond_socket(const std::string&);
         //void cout_to_web(int socket,const std::string&);
         void start_server();//start server and bind on a specified port
         void stop_server();//stop server
