@@ -3,9 +3,9 @@ a ai tool Designed to help Improve Efficiency working on command line Interface
 
 # Main Feature:
   
-1:gives you the Ability of Building your own tool in CPP (LLM skill/function calling)
+1:extension system wrote all in cpp, create a c++ function ,and tell ai to run it. 
 
-2:Execute any commands by itself
+2:work as both Server and client application
 
 3:send Multiple types of file via termial 
 
