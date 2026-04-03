@@ -12,6 +12,7 @@ void sagtlib::Agent::push_input(int i,const string& text){//input port
     this->push_in=(this->push_in+1)%INPUT_POOL_SIZE;
     this->queued_input+=1;
 }
+
 void sagtlib::Agent::listen_input(){//main loop thread
     while(this->on){
         sleep_2(5)

@@ -42,7 +42,7 @@ static void handle_client_in(sagtlib::Agent* agent,int socket){
 
     if (body_content_info == std::string::npos) {
         // handle GET request
-        agent->respond_socket(agent->help());// post a data here
+        agent->respond_socket(agent->help(),1);// post a data here
         CLOSE_SOCKET(socket);
     }
 
@@ -77,27 +77,41 @@ static void handle_client_in(sagtlib::Agent* agent,int socket){
 
 }
 
-void sagtlib::Agent::respond_socket(const std::string& data){
-    if(data==""){
-        CLOSE_SOCKET(this->input_pool[this->push_out].client_socket);
-        return;
-    };
-    json to_send;
-    to_send["m"]=data;
-    to_send["status"]=(data!=""?1:0);
-    std::string response_str = to_send.dump();
-    std::string http_response="HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Lenth: "+std::to_string(response_str.length())+"\r\n\r\n"+response_str;
-    ::send(this->input_pool[this->push_out].client_socket,http_response.c_str(),http_response.length(),0);
-};
+inline static void send_chunk(int client_fd, const std::string& data) {
+    if (data.empty()) return;
+    std::stringstream ss;
+    ss << std::hex << data.length() << "\r\n" << data << "\r\n";
+    std::string packet = ss.str();
+    ::send(client_fd, packet.c_str(), packet.length(), 0);
+}
 
-void sagtlib::Agent::respond_socket(const std::string& data,int type){
-    if(data=="")CLOSE_SOCKET(this->input_pool[this->push_out].client_socket);
-    json to_send;
-    to_send["m"]=data;
-    to_send["status"]=type;
-    std::string response_str = to_send.dump();
-    std::string http_response="HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Lenth: "+std::to_string(response_str.length())+"\r\n\r\n"+response_str;
-    ::send(this->input_pool[this->push_out].client_socket,http_response.c_str(),http_response.length(),0);
+void sagtlib::Agent::respond_socket(const std::string& data, int type) {
+    int client_fd = this->input_pool[this->push_out].client_socket;
+    switch(type){
+        case 0://start
+            {
+                std::string header = 
+                    "HTTP/1.1 200 OK\r\n"
+                    "Content-Type: application/json\r\n"
+                    "Transfer-Encoding: chunked\r\n"
+                    "\r\n";
+                ::send(client_fd, header.c_str(), header.length(), 0);
+            }
+            break;
+        case 1://continue
+            {
+
+                send_chunk(client_fd,data);
+
+            }
+            break;
+        case -1://end
+            ::send(client_fd, "0\r\n\r\n", 5, 0);
+            CLOSE_SOCKET(client_fd);
+        break;
+        default:
+            break;
+    }
 };
 
 void sagtlib::Agent::start_server() {

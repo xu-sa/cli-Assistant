@@ -29,9 +29,9 @@ void sagtlib::Agent::terminalsession(bool a){//start a terminal session for chat
 }
 
 void sagtlib::Agent::handle_input(){
-    bool is_command=(this->input_pool[this->push_out].message[0] == '/'?1:0);
+    int from=this->input_pool[this->push_out].client_socket;
     int to_send=0;
-    if(is_command){// if user need to Execute commands
+    if(this->input_pool[this->push_out].message[0] == '/'){//user need to Execute commands
         string command ,value;
         istringstream ss(this->input_pool[this->push_out].message);
         {
@@ -39,8 +39,7 @@ void sagtlib::Agent::handle_input(){
             ss.seekg(1,ios::cur);//jump over space Between command and value 
             getline(ss,value);
         }
-        
-        if(this->input_pool[this->push_out].client_socket==-1){
+        if(from==-1){
             if(command=="/exit")this->on=0;
             else if(command=="/save")cout<<this->save(value);
             else if(command=="/relop")cout<<this->load_cfg();
@@ -51,40 +50,58 @@ void sagtlib::Agent::handle_input(){
             else if(command=="/serveroff")this->stop_server_thread();//only for terminal
             else if(command=="/send")to_send=-1;//only for terminal
             else cout<<this->help()<<"Commands below are only Available for this termial:\n"
+                                    <<"    /exit                     ——terminate this session and this agent\n"
                                     <<"    /serveron <int>           ——start server on Specified port\n"
                                     <<"    /serveroff                ——stop server\n"
                                     <<"    /send <any>               ——to send message to agent\n";
-        }else if(this->input_pool[this->push_out].client_socket>=4){
-            if(command=="/exit")this->on=0;
-            else if(command=="/save")this->respond_socket(this->save(value));
-            else if(command=="/relop")this->respond_socket(this->load_cfg());
-            else if(command=="/reloh")this->respond_socket(this->load_cht(value));
-            else if(command=="/file")this->respond_socket(this->attach_file(value));
-            else if(command=="/config")this->respond_socket(this->config(value));
-            else this->respond_socket(this->help());
-
-            this->respond_socket("");//close socket
-        
-        }else PRINT_ERROR
+        }
+        else if(from>=4){
+            this->respond_socket("",0);//start socket
+            json to_send={};
+            to_send["status"]=1; 
+            if(command=="/save")to_send["m"]=this->save(value);
+            else if(command=="/relop")to_send["m"]=this->load_cfg();
+            else if(command=="/reloh")to_send["m"]=this->load_cht(value);
+            else if(command=="/file")to_send["m"]=this->attach_file(value);
+            else if(command=="/config")to_send["m"]=this->config(value);
+            else to_send["m"]=this->help();
+            this->respond_socket(to_send.dump(),1);//send one chunk
+            this->respond_socket("",-1);//close socket
+        }
+        else PRINT_ERROR
     }
-    else if(this->input_pool[this->push_out].client_socket>=4)to_send=1;
-    else if(this->input_pool[this->push_out].client_socket==-1)cout<<"unknown input, please use '/' for Instructions: "<<this->input_pool[this->push_out].message<<endl;
+    else if(from>=4)to_send=1;
+    else if(from==-1)cout<<"unknown input, please use '/' for Instructions"<<endl;
     else PRINT_ERROR;
-    if(to_send!=0){//meaning a message needs to be sent
-        if(this->input_pool[this->push_out].image=="")this->message_pool.push_back({{"role","user"},{"content",this->input_pool[this->push_out].message}});
-        else{//if there is a image attached 
+    if(to_send!=0){//have a message to send
+        if(to_send==-1)this->input_pool[this->push_out].message.erase(0,6);//get rid of the command prompt
+        if(this->input_pool[this->push_out].image[0]=='d'){//there is a image attached 
             json content=json::array();
             content.push_back({{"type","text"},{"text",this->input_pool[this->push_out].message}});
             content.push_back({{"type", "image_url"},{ "image_url",{{"url",this->input_pool[this->push_out].image}}}});//data:image/png;base64,iVBO.....
             this->message_pool.push_back({{"role","user"},{"content",content}});
-        } 
-        std::cout<<"this message will be send to "<<(to_send==1?"server socket\n":"local terminal\n");
-        if(to_send==1){
-            this->respond_socket(this->send()+"\n");
-            while (this->chat_state!=1)this->respond_socket(this->send()+"\n");
-            this->respond_socket("");//close socket
+        
         }
-        else{
+        else this->message_pool.push_back({{"role","user"},{"content",this->input_pool[this->push_out].message}});
+        if(to_send==1){//send to socket
+            this->respond_socket("",0);//start socket
+            json to_send={};
+            string chunk="";
+            {
+                to_send["status"]=1;
+                to_send["m"]=this->send()+"\n";
+                chunk=to_send.dump();
+            }
+            this->respond_socket(chunk,1);
+            while (this->chat_state!=1){
+                to_send["status"]=1;
+                to_send["m"]=this->send()+"\n";
+                chunk=to_send.dump();
+                this->respond_socket(chunk,1);
+            }
+            this->respond_socket("",-1);//close socket
+        }
+        else{//send to terminal
             cout<<this->send()<<endl;
             while (this->chat_state!=1)cout<<this->send()<<endl;
         }
@@ -96,30 +113,27 @@ string sagtlib::Agent::attach_file(const std::string& path){
     FileCategory type= check_file_type(path);
     switch (type)
     {
-    case NOT_SUPPORTED:
-        this->input_pool[this->push_in].message.clear();
-        this->input_pool[this->push_in].message+="\n**user tried to send file ```\n"+path+"\n``` which does not exist**\n";
-        return "this file "+path+" is not found\n";
+    case NOT_FOUND:
+        return "this file '"+path+"' is not available(x)\n";
     case NO_MARCH:
-        this->input_pool[this->push_in].message.clear();
-        this->input_pool[this->push_in].message+="\n**user tried to send file ```\n"+path+"\n``` which cant be view neither from the chat nor via a fetch tool**\n";
-        return "this file "+path+" is found but not in the list of supported files\n";
+        return "this file '"+path+"' is found but not supported(x)\n";
     case IMAGE:
+        this->input_pool[this->push_in].image=decode_image(path);
+        if(this->input_pool[this->push_in].image[0]=='d')return "add a image '"+path+"'\n";
+        else if(this->input_pool[this->push_in].image[0]=='0')return "Detected image path but Cant open(x)\n";
+        else if(this->input_pool[this->push_in].image[0]=='1')return "image is too large to add(x)\n";
+        else if(this->input_pool[this->push_in].image[0]=='2')return "image file detected but doesn't seem to be in good Format\n";
+        else PRINT_ERROR
         this->input_pool[this->push_in].image.clear();
-        this->input_pool[this->push_in].image+=decode_image(path);
-        return "add a image "+path+"\n";
     case DOCUMENT:
-        this->input_pool[this->push_in].message.clear();
         this->input_pool[this->push_in].message+=decode_txt(path);
-        return "add a text "+path+" \n";
+        return "add a text '"+path+"' \n";
     case AUDIO:
-        this->input_pool[this->push_in].message.clear();
         this->input_pool[this->push_in].message+=decode_audio(path);
-        return "add a audio "+path+" \n";
+        return "add a audio '"+path+"' \n";
     case VIDEO:
-        this->input_pool[this->push_in].message.clear();
         this->input_pool[this->push_in].message+=decode_video(path);
-        return "add a video "+path+" \n";
+        return "add a video '"+path+"' \n";
     default:
         return "Unexpected file type\n";
     }    
@@ -219,7 +233,6 @@ string sagtlib::Agent::config(const string& option){
 
 string sagtlib::Agent::help(){
     string I="No Such Command,Available:\n";
-    I+="    /exit                     ——terminate this session and this agent\n";
     I+="    /relop                    ——reload profile for this agent\n";
     I+="    /reloh                    ——reload chat for this agent\n";
     I+="    /save 'h'/'p'             ——choose to save history(h) or config profile(p)\n";

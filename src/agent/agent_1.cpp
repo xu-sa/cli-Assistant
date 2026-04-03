@@ -213,13 +213,13 @@ string sagtlib::Agent::load_cfg(){
     }
     
     {//input buffer 
-        
-        //this->image_attached=0;
         this->chat_state = 1;
         this->working_count = 0;
         this->fail_count = 0;
     }
+    
     this->on=1;
+
     return "Initiated agent "+this->profile.name+"\n";
 }
 
@@ -265,19 +265,18 @@ string sagtlib::Agent::save(const string& choice){
 sagtlib::Agent::Agent(const string& home,const string& room):home(home),room(room){
     cout<<this->load_cfg();
     {//server setting
-        this->port_num=9981;//default port
-        this->socket_num=-1;//as a sign of stop listening port
+        this->port_num=-1;
+        this->socket_num=-1;//will be distributed by system kernel 
     }
     this->start_main_thread();
-    for (int i = 0; i < INPUT_POOL_SIZE; ++i) {
-        this->input_pool[i] = inputs_{};
-    }
+    for (int i = 0; i < INPUT_POOL_SIZE; ++i)this->input_pool[i] = inputs_{.message="",.image="",.client_socket=0}; 
     this->push_in=0;
     this->push_out=0;
     this->queued_input=0;
 }
 
 sagtlib::Agent::~Agent(){
+    cout<<this->save("h");
     this->stop_all_thread();
     sleep_2(1)
     cout<<"agent service terminated..\n";
