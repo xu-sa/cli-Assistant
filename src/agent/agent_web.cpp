@@ -25,7 +25,6 @@ static void handle_client_in(sagtlib::Agent* agent,int socket){
     std::string buffer_string;
     int bytes_count;
     int head_end;
-   
     while (1) {//stat to receive head content
         // recv
         int n = recv(socket, buffer, sizeof(buffer) - 1, 0);
@@ -35,17 +34,12 @@ static void handle_client_in(sagtlib::Agent* agent,int socket){
         buffer_string.append(buffer, n);
         head_end = buffer_string.find("\r\n\r\n");
         if (head_end == std::string::npos) continue;
-        
         body_content_info = buffer_string.find("Content-Length: ");
         break;
     }
-
-    if (body_content_info == std::string::npos) {
-        // handle GET request
-        agent->respond_socket(agent->help(),1);// post a data here
-        CLOSE_SOCKET(socket);
+    if (body_content_info == std::string::npos) {// response a GET 
+        agent->respond_socket(agent->help(),2);// post a data here
     }
-
     { // start to Receive json content
         try {
             int i = std::stoul(buffer_string.substr(body_content_info + 16)); 
@@ -62,17 +56,13 @@ static void handle_client_in(sagtlib::Agent* agent,int socket){
             CLOSE_SOCKET(socket);
         }
     }
-
     try{ // handle POST request
         json j = json::parse(buffer_string.substr(head_end + 4));
-        if (!j["m"].empty())agent->push_input(socket, j["m"]);//push in message
-        else {
-            CLOSE_SOCKET(socket);
-        }
+        if (j["message"].is_string()&&j["message"]!="")agent->push_input(socket, j["message"]);//push in message
+        else CLOSE_SOCKET(socket);//unexpected issue
     } catch (const std::exception& e) { // client Post a unparsable data
         std::cout << "Unexpected error: " << e.what() << "\n";
-        agent->respond_socket(e.what(),-1);// post a data here
-        CLOSE_SOCKET(socket);
+        agent->respond_socket(e.what(),2);// response here
     }
 
 }
@@ -88,7 +78,7 @@ inline static void send_chunk(int client_fd, const std::string& data) {
 void sagtlib::Agent::respond_socket(const std::string& data, int type) {
     int client_fd = this->input_pool[this->push_out].client_socket;
     switch(type){
-        case 0://start
+        case 0://start stream
             {
                 std::string header = 
                     "HTTP/1.1 200 OK\r\n"
@@ -98,14 +88,31 @@ void sagtlib::Agent::respond_socket(const std::string& data, int type) {
                 ::send(client_fd, header.c_str(), header.length(), 0);
             }
             break;
-        case 1://continue
+        case 1://continue sending
             {
-
-                send_chunk(client_fd,data);
-
+                json chunk={};
+                chunk["status"]=1;
+                chunk["message"]=data;
+                send_chunk(client_fd,chunk.dump());
             }
             break;
-        case -1://end
+        case 2://one time response
+            {
+                
+                json package={};
+                package["status"]=type;
+                package["message"]=data;
+                std::string body=package.dump();
+                std::string to_send = "POST /path HTTP/1.1\r\n"
+                      "Host: example.com\r\n"
+                      "Content-Type: application/json\r\n"
+                      "Content-Length: " + std::to_string(body.size()) + "\r\n"
+                      "\r\n" + body;
+                ::send(client_fd,to_send.c_str(),to_send.length(),0);
+                CLOSE_SOCKET(client_fd);
+            }
+            break;
+        case -1://end of stream
             ::send(client_fd, "0\r\n\r\n", 5, 0);
             CLOSE_SOCKET(client_fd);
         break;
@@ -122,7 +129,7 @@ void sagtlib::Agent::start_server() {
             return;
         }
     #endif
-    //this->stop_server();
+    
 
     sleep_2(3);
     
