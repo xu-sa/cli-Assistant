@@ -12,6 +12,21 @@ a ai tool Designed to help Improve Efficiency working on command line Interface
 
 # Prerequisite: nlohmann::json & curl
 
+# build on linux
+```git clone https://github.com/xu-sa/cli-Assistant.git```
+```
+```cd ./cli-Assistant```
+```
+```./build-lib.sh```
+```
+at this moment the lib is built Successfully,if you want to use the test app:
+```./build-test.sh```
+```
+install as user level service (optional):
+```./install.sh```
+```
+#build on windows:
+the same as linux, its just i didnt get the 'install.bat' ready yet
 # How to use:
 you can build the Library using ./build-lib.sh , result(.a and .h) would Appear in ./test/lib/
 
