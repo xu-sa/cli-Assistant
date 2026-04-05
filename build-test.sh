@@ -1,4 +1,5 @@
  #!/bin/bash 
+mdkir ./test/bin
 g++ -std=c++17 -DCURL_STATICLIB \
     -I./test/lib \
     ./test/main.cpp \
@@ -11,4 +12,4 @@ g++ -std=c++17 -DCURL_STATICLIB \
     ./lib-l/zlib/lib/libz.a \
     -Wl,--end-group \
     -lpthread -ldl -lrt \
-    -o ./test/bin/test_linux
+    -o ./test/bin/syagent

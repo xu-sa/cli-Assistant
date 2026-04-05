@@ -49,13 +49,13 @@ create_service_file() {
     
     cat > "$SYSTEMD_USER_DIR/$SERVICE_NAME.service" << EOF
 [Unit]
-Description=your most efficient terminal assistant~~
+Description=~~the most efficient terminal assistant~~
 
 [Service]
 Type=simple
 User=$USER
 WorkingDirectory=$INSTALL_DIR
-ExecStart=$INSTALL_DIR/$BINARY_NAME $INSTALL_DIR/file linuxagent 9995
+ExecStart=$INSTALL_DIR/$BINARY_NAME $HOME/ linux-bot 9995
 # Environment="CONFIG_DIR=$CONFIG_DIR"
 # Environment="LOG_DIR=$LOG_DIR"
 
