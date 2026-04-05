@@ -59,8 +59,9 @@ ExecStart=$INSTALL_DIR/$BINARY_NAME $HOME/ linux-bot 9995
 # Environment="CONFIG_DIR=$CONFIG_DIR"
 # Environment="LOG_DIR=$LOG_DIR"
 
-Restart=always
-RestartSec=30
+
+KillUserProcesses=yes 
+Restart=no
 StartLimitInterval=60
 StartLimitBurst=5
 
@@ -78,7 +79,6 @@ PrivateDevices=false
 ProtectHome=no
 ProtectSystem=strict
 ReadWritePaths=$LOG_DIR $CONFIG_DIR
- 
 # Environment="HOME=$HOME"
 # Environment="USER=$USER"
 
