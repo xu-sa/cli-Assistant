@@ -3,7 +3,7 @@
 #include <string>
 #include <unordered_map>
 enum FileCategory {
-    NOT_SUPPORTED,
+    NOT_FOUND,
     NO_MARCH,
     IMAGE,
     DOCUMENT,
