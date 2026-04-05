@@ -35,8 +35,10 @@ install as user level service (optional):
 ```
 ./install.sh
 ```
-#build on windows:
-the same as linux, its just i didnt get thef 'install.bat' ready yet
+#build on windows
+
+the same as linux, its just i didnt get the 'install.bat' ready yet
+
 # How to use:
 you can build the Library using ./build-lib.sh , result(.a and .h) would Appear in ./test/lib/
 
