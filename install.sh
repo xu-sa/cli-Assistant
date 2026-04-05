@@ -59,8 +59,6 @@ ExecStart=$INSTALL_DIR/$BINARY_NAME $HOME/ linux-bot 9995
 # Environment="CONFIG_DIR=$CONFIG_DIR"
 # Environment="LOG_DIR=$LOG_DIR"
 
-
-KillUserProcesses=yes 
 Restart=no
 StartLimitInterval=60
 StartLimitBurst=5
