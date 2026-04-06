@@ -34,9 +34,10 @@ struct Model_setup{
     std::string name;
     std::string whoyouare;//
     std::string api;
-    int provider;//LLM provider,currently Deepseek and xai
+    int provider;//LLM provider
     int model;//LLM model,Varies from provider
     int openroute_model;
+    int local_llm_socket;
     int max_tokens;//token limites the costs
     bool stream;//stream output/NOT AVAILABLE YET
     float temperature;//temperature to make LLM speak within a Concentrated or Deviated mind 

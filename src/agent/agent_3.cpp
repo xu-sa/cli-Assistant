@@ -49,7 +49,7 @@ void sagtlib::Agent::handle_input(){
             else if(command=="/serveron")this->start_server_thread(value);//only for terminal
             else if(command=="/serveroff")this->stop_server_thread();//only for terminal
             else if(command=="/send")to_send=-1;//only for terminal
-            else cout<<this->help()<<"Commands below are only Available for this termial:\n"
+            else cout<<this->help()<< "Commands below are only Available for this termial:\n"
                                     <<"    /exit                     ——terminate this session and this agent\n"
                                     <<"    /serveron <int>           ——start server on Specified port\n"
                                     <<"    /serveroff                ——stop server\n"
@@ -62,7 +62,7 @@ void sagtlib::Agent::handle_input(){
             else if(command=="/reloh")this->respond_socket(this->load_cht(value),1);
             else if(command=="/file")this->respond_socket(this->attach_file(value),1);
             else if(command=="/config")this->respond_socket(this->config(value),1);
-            else this->respond_socket(this->help( ),1);
+            else this->respond_socket(this->help(),1);
             this->respond_socket("",-1);//close socket
         }
         else PRINT_ERROR
@@ -202,11 +202,10 @@ string sagtlib::Agent::config(const string& option){
             this->profile.tool_choice=(value=="none"||value=="auto"||value=="required"?value:this->profile.tool_choice);
             I="\nCurrent tool choice: "+this->profile.tool_choice+"\n";
             break;
-        
         default:
-            I="Configuration: No Such Option\n";
+            I= "Configuration: No Such Option\n";
             I+="Usage:/config [option] [value]\n";
-            I+="  0 <int>                      Set local llm Socket (Note that this can override model setting)    Current: "+(this->profile.local_llm_socket==-1?"None":to_string(this->profile.local_llm_socket))+"\n";
+            I+="  0 <int>                      Set local llm Socket (this overrides model/provider config)    Current: "+(this->profile.local_llm_socket==-1?"None":to_string(this->profile.local_llm_socket))+"\n";
             I+="  1 <string>                   Set API key \n";
             I+="  2 <string>                   Set agent description( name:'"+this->profile.name+"' would be added in the front)\n";
             I+="  3 <int>                      Set provider        (leave [value] empty to get hint) Current: "+to_string(this->profile.provider)+"\n";
@@ -247,7 +246,7 @@ string sagtlib::Agent::help_open_route_model(){
 
 string sagtlib::Agent::help_model(){
     string I;
-    if(urls[this->profile.provider][1]=="Local LLM")return "Local LLM model is variable, it depends on your setup\n";
+    if(urls[this->profile.provider][1]=="Local LLM")return "Local LLM model is not defined here, it depends on your setup\n";
     if(urls[this->profile.provider][1]=="OpenRouter")return "Open Route provides models that can be viewed via /config 5\n";
     for(int i=0;i<5;i++)if(!models[this->profile.provider][i].empty())I+="    "+to_string(i)+". "+models[this->profile.provider][i]+"\n";
     return I;

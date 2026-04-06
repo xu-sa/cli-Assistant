@@ -113,7 +113,7 @@ string sagtlib::Agent::send(){
     };
     
     {//to build the request body
-        request_body["model"]=(urls[this->profile.provider][1]=="OpenRoute"?models_open_router[this->profile.openroute_model]:models[this->profile.provider][this->profile.model]);
+        request_body["model"]=(this->profile.local_llm_socket!=-1?"local llm":(urls[this->profile.provider][1]=="OpenRoute"?models_open_router[this->profile.openroute_model]:models[this->profile.provider][this->profile.model]));
         request_body["messages"]=this->message_pool;
         request_body["temperature"]=this->profile.temperature;  
         request_body["top_p"]=this->profile.top_p;

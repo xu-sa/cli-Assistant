@@ -1,19 +1,9 @@
 #ifndef SYDATA
 #define SYDATA
-
-// #ifdef DEFINE_TOOL
-// #undef DEFINE_TOOL 
-// #define DEFINE_TOOL(Toolname,description,...) const std::string Toolname[][5]={{#Toolname,description,"","",""},__VA_ARGS__};
-// #endif
-// #ifdef REGISTER_TOOL
-// #undef REGISTER_TOOL
-// #define REGISTER_TOOL(Agent,Definition,Tool) Agent->register_tool(Definition,sizeof(Definition)/sizeof(Definition[0]),Tool)
-// #endif
 #define PROVIDER_SIZE sizeof(urls)/sizeof(urls[0])
 #define MODEL_OPTION 5
 #define OPEN_ROUTE_SIZE sizeof(models_open_router) / sizeof(models_open_router[0])
 
-//#include "../json/json.hpp"
 #include <string>
 const std::string models[][5]={
     {"deepseek-chat","deepseek-reasoner","","",""},
@@ -39,8 +29,7 @@ const std::string urls[][2]={
     {"https://api.x.ai/v1/chat/completions","XAI"},
     {"https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions","Qwen"},
     {"https://api.cohere.ai/compatibility/v1/chat/completions","Cohere"},
-    {"https://openrouter.ai/api/v1/chat/completions","OpenRouter"},
-    {"","Local LLM"}
+    {"https://openrouter.ai/api/v1/chat/completions","OpenRouter"}
 };
 
 #endif
