@@ -57,15 +57,12 @@ void sagtlib::Agent::handle_input(){
         }
         else if(from>=4){
             this->respond_socket("",0);//start socket
-            json to_send={};
-            to_send["status"]=1; 
-            if(command=="/save")to_send["m"]=this->save(value);
-            else if(command=="/relop")to_send["m"]=this->load_cfg();
-            else if(command=="/reloh")to_send["m"]=this->load_cht(value);
-            else if(command=="/file")to_send["m"]=this->attach_file(value);
-            else if(command=="/config")to_send["m"]=this->config(value);
-            else to_send["m"]=this->help();
-            this->respond_socket(to_send.dump(),1);//send one chunk
+            if(command=="/save")this->respond_socket(this->save(value),1);
+            else if(command=="/relop")this->respond_socket(this->load_cfg(),1);
+            else if(command=="/reloh")this->respond_socket(this->load_cht(value),1);
+            else if(command=="/file")this->respond_socket(this->attach_file(value),1);
+            else if(command=="/config")this->respond_socket(this->config(value),1);
+            else this->respond_socket(this->help( ),1);
             this->respond_socket("",-1);//close socket
         }
         else PRINT_ERROR
@@ -85,20 +82,8 @@ void sagtlib::Agent::handle_input(){
         else this->message_pool.push_back({{"role","user"},{"content",this->input_pool[this->push_out].message}});
         if(to_send==1){//send to socket
             this->respond_socket("",0);//start socket
-            json to_send={};
-            string chunk="";
-            {
-                to_send["status"]=1;
-                to_send["m"]=this->send()+"\n";
-                chunk=to_send.dump();
-            }
-            this->respond_socket(chunk,1);
-            while (this->chat_state!=1){
-                to_send["status"]=1;
-                to_send["m"]=this->send()+"\n";
-                chunk=to_send.dump();
-                this->respond_socket(chunk,1);
-            }
+            this->respond_socket(this->send()+"\n",1);
+            while (this->chat_state!=1)this->respond_socket(this->send()+"\n",1);
             this->respond_socket("",-1);//close socket
         }
         else{//send to terminal
@@ -165,6 +150,10 @@ string sagtlib::Agent::config(const string& option){
     }
     
     switch(choice){
+        case 0:
+            this->profile.local_llm_socket=(value_int>0?value_int:-1);
+            I="\nCurrent Local LLM socket: "+(value_int>0?"127.0.0.1:"+to_string(value_int):"None")+"\n";
+            break;
         case 1:
             this->profile.api=(value.empty()?this->profile.api:value);
             I="\nCurrent api: "+this->profile.api+"\n";
@@ -176,6 +165,7 @@ string sagtlib::Agent::config(const string& option){
         case 3:
             this->profile.provider= (value_int>=0&&value_int<PROVIDER_SIZE?value_int:this->profile.provider);
             I=this->help_provider();
+            this->profile.model=0;
             I+="\nCurrent provider: "+to_string(this->profile.provider)+"\n";
             break;
         case 4:
@@ -212,20 +202,22 @@ string sagtlib::Agent::config(const string& option){
             this->profile.tool_choice=(value=="none"||value=="auto"||value=="required"?value:this->profile.tool_choice);
             I="\nCurrent tool choice: "+this->profile.tool_choice+"\n";
             break;
+        
         default:
             I="Configuration: No Such Option\n";
-            I+="Usage: [option] [value]\n";
+            I+="Usage:/config [option] [value]\n";
+            I+="  0 <int>                      Set local llm Socket (Note that this can override model setting)    Current: "+(this->profile.local_llm_socket==-1?"None":to_string(this->profile.local_llm_socket))+"\n";
             I+="  1 <string>                   Set API key \n";
             I+="  2 <string>                   Set agent description( name:'"+this->profile.name+"' would be added in the front)\n";
             I+="  3 <int>                      Set provider        (leave [value] empty to get hint) Current: "+to_string(this->profile.provider)+"\n";
             I+="  4 <int>                      Set model           (leave [value] empty to get hint) Current: "+to_string(this->profile.model)+"\n";
             I+="  5 <int>                      Set open route model(leave [value] empty to get hint) Current: "+to_string(this->profile.openroute_model)+"\n";
-            I+="  6 <int>                      Set max tokens     Current: "+to_string(this->profile.max_tokens)+"\n";
-            I+="  7 '0'/'1'                    Set stream         Current: "+to_string(this->profile.stream)+"\n";
-            I+="  8 <float>                    Set temperature    Current: "+to_string(this->profile.temperature)+"\n";
-            I+="  9 <float>                    Set top_p          Current: "+to_string(this->profile.top_p)+"\n";
-            I+=" 10 <int>                      Set max messages   Current: "+to_string(this->profile.max_message)+"\n";
-            I+=" 11 'none'/'auto'/'required'   Set tool choice    Current: "+this->profile.tool_choice+"\n";
+            I+="  6 <int>                      Set max tokens          Current: "+to_string(this->profile.max_tokens)+"\n";
+            I+="  7 '0'/'1'                    Set stream              Current: "+to_string(this->profile.stream)+"\n";
+            I+="  8 <float>                    Set temperature         Current: "+to_string(this->profile.temperature)+"\n";
+            I+="  9 <float>                    Set top_p               Current: "+to_string(this->profile.top_p)+"\n";
+            I+=" 10 <int>                      Set max messages        Current: "+to_string(this->profile.max_message)+"\n";
+            I+=" 11 'none'/'auto'/'required'   Set tool choice         Current: "+this->profile.tool_choice+"\n";
             break;
     }
     return I;
@@ -255,6 +247,8 @@ string sagtlib::Agent::help_open_route_model(){
 
 string sagtlib::Agent::help_model(){
     string I;
+    if(urls[this->profile.provider][1]=="Local LLM")return "Local LLM model is variable, it depends on your setup\n";
+    if(urls[this->profile.provider][1]=="OpenRouter")return "Open Route provides models that can be viewed via /config 5\n";
     for(int i=0;i<5;i++)if(!models[this->profile.provider][i].empty())I+="    "+to_string(i)+". "+models[this->profile.provider][i]+"\n";
     return I;
 }

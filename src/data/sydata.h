@@ -21,6 +21,7 @@ const std::string models[][5]={
     {"grok-4-1-fast-reasoning","grok-4-1-fast-non-reasoning","grok-imagine-image","",""},
     {"qwen-max","qwen-plus","qwen-turbo","",""},
     {"command-r-plus","command-r","command","command-a-03-2025",""},
+    
 };
 
 const std::string models_open_router[] = {
@@ -38,7 +39,8 @@ const std::string urls[][2]={
     {"https://api.x.ai/v1/chat/completions","XAI"},
     {"https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions","Qwen"},
     {"https://api.cohere.ai/compatibility/v1/chat/completions","Cohere"},
-    {"https://openrouter.ai/api/v1/chat/completions","OpenRouter"}
+    {"https://openrouter.ai/api/v1/chat/completions","OpenRouter"},
+    {"","Local LLM"}
 };
 
 #endif

@@ -139,7 +139,7 @@ string sagtlib::Agent::send(){
         }
     }
     
-    json agent_reply = handle_post(urls[this->profile.provider][0],this->profile.api,&request_body);
+    json agent_reply = handle_post((this->profile.local_llm_socket==-1?urls[this->profile.provider][0]:"127.0.0.1:"+to_string(this->profile.local_llm_socket)+"/chat/completions"),this->profile.api,&request_body);
     
     if (agent_reply["code_"] == 200) {
         string reply_context=agent_reply["content"].get<std::string>();
@@ -186,6 +186,7 @@ string sagtlib::Agent::load_cfg(){
             this->profile.max_tokens=(data.contains("max_tokens")?(int)data["max_tokens"]:2000);
             this->profile.max_message=(data.contains("max_history")?(int)data["max_history"]:40);
             this->profile.stream = (data.contains("stream") ? (bool)data["stream"] : false );
+            this->profile.local_llm_socket=(data.contains("local_socket")?(int)data["local_socket"]:-1);
         }
         catch(...){
             cout<<"Initiation: Config Variable formate issue Occurred,using Default...\n";
@@ -197,6 +198,7 @@ string sagtlib::Agent::load_cfg(){
             this->profile.max_tokens=2000;
             this->profile.max_message=40;
             this->profile.stream = false;
+            this->profile.local_llm_socket=-1;
         }
         if(this->profile.max_message>150)this->profile.max_message=150;
         if(this->profile.max_message<10)this->profile.max_message=10;
@@ -258,6 +260,7 @@ string sagtlib::Agent::save(const string& choice){
         save["top_p"]=this->profile.top_p;
         save["max_history"]=this->profile.max_message;
         save["tool_choice"]=this->profile.tool_choice;
+        save["local_socket"]=this->profile.local_llm_socket;
         return handle_save(&save,this->home,this->room,"profile.json");
     }else return "no such option\n";
 }
