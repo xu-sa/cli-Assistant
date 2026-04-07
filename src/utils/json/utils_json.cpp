@@ -118,7 +118,7 @@ string handle_save(json* save,const string& home,const string& room,const string
 //Miscellaneous tools
 string get_home(const char* argument_0){
     fs::path p =fs::absolute(fs::path(argument_0)).parent_path();
-    return (p / ".Slcache").string();
+    return (p / ".slcache").string();
 }
 
 string get_time(){
@@ -156,24 +156,3 @@ string get_env(int provider){
     }
     return buffer;
 }
-
-// int set_int(const std::string& str){
-//     try{
-//         int i =0;
-//         i=stoi(str);
-//         return i;
-//     }catch(const exception e){
-//         return -23;
-//     }
-// }
-
-// float set_float(const string& value){
-
-//     float value_float;
-//     stringstream ss(value);
-//     ss>>value_float;
-//     if (ss.fail() || !ss.eof()) {
-//         value_float=-24.0f;
-//     } 
-//     return value_float;
-// }
