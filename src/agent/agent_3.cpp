@@ -12,10 +12,10 @@ void sagtlib::Agent::terminalsession(bool a){//start a terminal session for chat
     if(!a){
         while (this->on)
         {
-            sleep_2(2);
-            cout<<"\n>>";
-            getline(cin,input);
-            if(input=="/exit")break;   
+            sleep_2(10);
+            //cout<<"\n>>";
+            //getline(cin,input);
+            //if(input=="/exit")break;   
         }
     }else{
         while (this->on)

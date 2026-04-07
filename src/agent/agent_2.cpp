@@ -34,6 +34,17 @@ void sagtlib::Agent::start_main_thread(){
     this->main_thread=thread(&sagtlib::Agent::listen_input,this);
     cout<<"main thread is on\n";
 }
+// void sagtlib::Agent::start_tool_thread(){
+//     while (this->on)
+//     {   
+//         sleep_2(5)
+//         if(this->chat_state!=2)continue;
+//         lock_guard<mutex> locker(this->tool_mutex);
+//         this->handle_tool_request();
+//     }
+    
+
+// }
 
 void sagtlib::Agent::start_server_thread(const string& input_port){
     if(this->socket_num!=-1){

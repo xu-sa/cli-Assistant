@@ -154,7 +154,7 @@ string sagtlib::Agent::send(){
         if (agent_reply.contains("tool_calls")){//if there is tool usage
             this->chat_state=2;
             this->handle_tool_request(&agent_reply);
-            return (reply_context.empty()?(this->profile.name+" : "+"calling tool.."):message_reply);
+            return (reply_context.empty()?("(calling tool)"+this->profile.name+" : "+".."):"(calling tool)"+message_reply);
         }else this->message_pool.push_back({{"role",agent_reply["role"]},{"content",agent_reply["content"]}});//if no tool,then reply and end this session
     }
     

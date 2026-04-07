@@ -37,6 +37,7 @@ static void handle_client_in(sagtlib::Agent* agent,int socket){
         body_content_info = buffer_string.find("Content-Length: ");
         break;
     }
+    
     if (body_content_info == std::string::npos) {// response a GET 
         agent->respond_socket(agent->help(),2);// post a data here
     }
@@ -56,6 +57,7 @@ static void handle_client_in(sagtlib::Agent* agent,int socket){
             CLOSE_SOCKET(socket);
         }
     }
+    
     try{ // handle POST request
         json j = json::parse(buffer_string.substr(head_end + 4));
         if (j["message"].is_string()&&j["message"]!="")agent->push_input(socket, j["message"]);//push in message
@@ -91,17 +93,25 @@ void sagtlib::Agent::respond_socket(const std::string& data, int type) {
         case 1://continue sending
             {
                 json chunk={};
-                chunk["status"]=1;
-                chunk["message"]=data;
-                send_chunk(client_fd,chunk.dump());
+                chunk["status"]=type;
+                size_t data_len = data.length();
+                size_t offset = 0;
+                while (offset < data_len) {
+                    size_t chunk_size = std::min((size_t)512, data_len - offset);
+                    std::string data_chunk = data.substr(offset, chunk_size);
+                    offset += chunk_size;
+                    chunk["message"]=data_chunk;
+                    chunk["end"] = (offset >= data_len) ? 1 : 0;
+                    send_chunk(client_fd, chunk.dump());
+                }
             }
             break;
         case 2://one time response
             {
-                
                 json package={};
                 package["status"]=type;
                 package["message"]=data;
+                
                 std::string body=package.dump();
                 std::string to_send = "POST /path HTTP/1.1\r\n"
                       "Host: example.com\r\n"
@@ -147,17 +157,20 @@ void sagtlib::Agent::start_server() {
 
     int opt = 1;
     if (setsockopt(this->socket_num, SOL_SOCKET, SO_REUSEADDR, (const char*)&opt, sizeof(opt)) < 0) {
+        this->socket_num=-1;
         std::cerr << "setsockopt failed\n";
     }
 
     if (bind(this->socket_num, (sockaddr*)&address, sizeof(address)) < 0) {
         std::cerr << "Binding failed\n";
+        this->socket_num=-1;
         CLOSE_SOCKET(this->socket_num);
         return;
     }
 
     if (listen(this->socket_num, 3) < 0) {
         std::cerr << "Listen failed\n";
+        this->socket_num=-1;
         CLOSE_SOCKET(this->socket_num);
         return;
     }
