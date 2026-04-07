@@ -11,7 +11,7 @@ using namespace std;
 #define DEFAULT_ROOM "linux-agent"
 #define DEFAULT_PORT 9995
 #endif
-int main(int argc,const char** argv) {
+int main(int argc,const char** argv) {//usage sample: ./main -home -room -port 
     sagtlib::sagent* agent = sagtlib::sagent::create((argc<2?DEFAULT_HOME:argv[1]),(argc<3?DEFAULT_ROOM:argv[2]));
     if (agent!=NULL) {
         if(argc<4){
