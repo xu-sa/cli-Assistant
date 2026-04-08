@@ -1,5 +1,5 @@
  #!/bin/bash 
-mkdir ./test/bin
+mkdir -p ./test/bin
 g++ -std=c++17 -DCURL_STATICLIB \
     -I./test/lib \
     ./test/main.cpp \
