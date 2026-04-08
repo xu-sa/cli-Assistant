@@ -10,6 +10,7 @@ CONFIG_DIR=$INSTALL_DIR
 LOG_DIR="$INSTALL_DIR/logs"
 SYSTEMD_USER_DIR="$HOME/.config/systemd/user"
 BINARY_NAME="syagent"
+AGENT_NAME="linux-bot"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BINARY_PATH="$SCRIPT_DIR/test/bin/$BINARY_NAME"
 check_binary() {
@@ -55,7 +56,7 @@ Description=~~the most efficient terminal assistant~~
 Type=simple
 User=$USER
 WorkingDirectory=$INSTALL_DIR
-ExecStart=$INSTALL_DIR/$BINARY_NAME $HOME/ linux-bot 9995
+ExecStart=$INSTALL_DIR/$BINARY_NAME $HOME/ $AGENT_NAME 9995
 # Environment="CONFIG_DIR=$CONFIG_DIR"
 # Environment="LOG_DIR=$LOG_DIR"
 
@@ -106,17 +107,22 @@ start_service() {
         exit 1
     fi
 }
-
+setup_workspace(){
+    mkdir -p "$HOME/.slcache"
+    cp ./assets/RULE.md "$HOME/.slcache/"
+    mkdir -p "$HOME/.slcache/$AGENT_NAME"
+    cp ./assets/IDENTITY.md "$HOME/.slcache/$AGENT_NAME/"
+    cp ./assets/SUBRULE.md "$HOME/.slcache/$AGENT_NAME/"
+}
 main() {
     echo -e "${GREEN}start to install Syagent user service...${NC}"
     echo ""
-    
+    setup_workspace
     check_binary
     create_directories
     copy_files
     create_service_file
     setup_systemd
     start_service
-    
-}
+}   
 main
