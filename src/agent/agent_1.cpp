@@ -176,7 +176,7 @@ string sagtlib::Agent::load_cfg(){
         this->profile.api = (data.contains("APIKEY")?data["APIKEY"]:"");
         this->profile.name = this->room;
         this->profile.tool_choice = (data.contains("tool_choice")?data["tool_choice"]:"auto");
-        this->profile.whoyouare = (data.contains("whoyouare")?data["whoyouare"]:"you are a helpful AI Assistant");
+        //this->profile.whoyouare = (data.contains("whoyouare")?data["whoyouare"]:"you are a helpful AI Assistant");
         try{
             this->profile.temperature = (data.contains("temperature") ? (float)data["temperature"] : 0.7f);
             this->profile.top_p = (data.contains("top_p") ? (float)data["top_p"] : 0.8f);
@@ -202,7 +202,6 @@ string sagtlib::Agent::load_cfg(){
         }
         if(this->profile.max_message>150)this->profile.max_message=150;
         if(this->profile.max_message<10)this->profile.max_message=10;
-    
     }
     
     {//message vector
@@ -210,7 +209,15 @@ string sagtlib::Agent::load_cfg(){
         this->message_pool.clear();
         this->message_pool.shrink_to_fit();
         }
-        this->message_pool.push_back({{"role","system"},{"content",("**your name**:"+this->profile.name+"\n **who you are**:"+this->profile.whoyouare)}});
+        this->message_pool.push_back({
+            {"role","system"},
+            {"content",(
+                "**your name**:"+this->profile.name+\
+                "\n **who you are**:"+read_as_string(this->home,this->room,"IDENTITY.md")+\
+                "\n **General RULE**:"+read_as_string(this->home,"RULE.md")+\
+                "\n **your Additional RULE**:"+read_as_string(this->home,this->room,"SUBRULE.md")
+            )}
+        });
     
     }
     
@@ -249,7 +256,7 @@ string sagtlib::Agent::save(const string& choice){
         return handle_save(&save,this->home,this->room,(get_time()+"chat.json"));
     }
     else if(choice=="p"){//save config
-        save["whoyouare"]=this->profile.whoyouare;
+        //save["whoyouare"]=this->profile.whoyouare;
         save["APIKEY"]=this->profile.api;
         save["PROVIDER_1"]=this->profile.provider;
         save["MODEL"]=this->profile.model;

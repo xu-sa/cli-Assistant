@@ -32,7 +32,7 @@ struct SKILL{
 
 struct Model_setup{
     std::string name;
-    std::string whoyouare;//
+    //std::string whoyouare;//
     std::string api;
     int provider;//LLM provider
     int model;//LLM model,Varies from provider

@@ -158,65 +158,64 @@ string sagtlib::Agent::config(const string& option){
             this->profile.api=(value.empty()?this->profile.api:value);
             I="\nCurrent api: "+this->profile.api+"\n";
             break;
+        // case 2:
+        //     this->profile.whoyouare=(value.empty()?this->profile.whoyouare:value);
+        //     I="\nCurrent Discription: "+this->profile.whoyouare+"\n";
+        //     break;
         case 2:
-            this->profile.whoyouare=(value.empty()?this->profile.whoyouare:value);
-            I="\nCurrent Discription: "+this->profile.whoyouare+"\n";
-            break;
-        case 3:
             this->profile.provider= (value_int>=0&&value_int<PROVIDER_SIZE?value_int:this->profile.provider);
             I=this->help_provider();
             this->profile.model=0;
             I+="\nCurrent provider: "+to_string(this->profile.provider)+"\n";
             break;
-        case 4:
+        case 3:
             this->profile.model=(value_int>=0&&value_int<MODEL_OPTION?value_int:this->profile.model);
             I=this->help_model();
             I+="\nCurrent model: "+to_string(this->profile.model)+"\n";
             break;
-        case 5:
+        case 4:
             this->profile.openroute_model=(value_int>=0&&value_int<OPEN_ROUTE_SIZE?value_int:this->profile.openroute_model);
             I=this->help_open_route_model();
             I+="\nCurrent open route model: "+to_string(this->profile.openroute_model)+"\n";
             break;
-        case 6:
+        case 5:
             this->profile.max_tokens=(value_int>5000||value_int<400?this->profile.max_tokens:value_int);
             I="\nCurrent max tokens: "+to_string(this->profile.max_tokens)+"\n";
             break;
-        case 7:
+        case 6:
             this->profile.stream=(value=="true"||value=="1");
             I="\nCurrent stream: "+to_string(this->profile.stream)+"\n";
             break;
-        case 8:
+        case 7:
             this->profile.temperature=(value_float==-24.0f||value_float>2?this->profile.temperature:value_float);
             I="\nCurrent temprature: "+to_string(this->profile.temperature)+"\n";
             break;
-        case 9:
+        case 8:
             this->profile.top_p=(value_float==-24.0f||value_float>2?this->profile.top_p:value_float);
             I="\nCurrent top p: "+to_string(this->profile.top_p)+"\n";
             break;
-        case 10:
+        case 9:
             this->profile.max_message=(value_int>150||value_int<10?this->profile.max_message:value_int);
             I="\nCurrent max messages: "+to_string(this->profile.max_message)+"\n";
             break;
-        case 11:
+        case 10:
             this->profile.tool_choice=(value=="none"||value=="auto"||value=="required"?value:this->profile.tool_choice);
             I="\nCurrent tool choice: "+this->profile.tool_choice+"\n";
             break;
         default:
             I= "Configuration: No Such Option\n";
             I+="Usage:/config [option] [value]\n";
-            I+="  0 <int>                      Set local llm Socket (this overrides model/provider config)    Current: "+(this->profile.local_llm_socket==-1?"None":to_string(this->profile.local_llm_socket))+"\n";
+            I+="  0 <int>                      Set local LLM Socket (this overrides model/provider config)    Current: "+(this->profile.local_llm_socket==-1?"None":to_string(this->profile.local_llm_socket))+"\n";
             I+="  1 <string>                   Set API key \n";
-            I+="  2 <string>                   Set agent description( name:'"+this->profile.name+"' would be added in the front)\n";
-            I+="  3 <int>                      Set provider        (leave [value] empty to get hint) Current: "+to_string(this->profile.provider)+"\n";
-            I+="  4 <int>                      Set model           (leave [value] empty to get hint) Current: "+to_string(this->profile.model)+"\n";
-            I+="  5 <int>                      Set open route model(leave [value] empty to get hint) Current: "+to_string(this->profile.openroute_model)+"\n";
-            I+="  6 <int>                      Set max tokens          Current: "+to_string(this->profile.max_tokens)+"\n";
-            I+="  7 '0'/'1'                    Set stream              Current: "+to_string(this->profile.stream)+"\n";
-            I+="  8 <float>                    Set temperature         Current: "+to_string(this->profile.temperature)+"\n";
-            I+="  9 <float>                    Set top_p               Current: "+to_string(this->profile.top_p)+"\n";
-            I+=" 10 <int>                      Set max messages        Current: "+to_string(this->profile.max_message)+"\n";
-            I+=" 11 'none'/'auto'/'required'   Set tool choice         Current: "+this->profile.tool_choice+"\n";
+            I+="  2 <int>                      Set LLM provider        (leave [value] empty to get hint)      Current: "+to_string(this->profile.provider)+"\n";
+            I+="  3 <int>                      Set LLM model           (leave [value] empty to get hint)      Current: "+to_string(this->profile.model)+"\n";
+            I+="  4 <int>                      Set LLM open route model(leave [value] empty to get hint)      Current: "+to_string(this->profile.openroute_model)+"\n";
+            I+="  5 <int>                      Set max tokens          Current: "+to_string(this->profile.max_tokens)+"\n";
+            I+="  6 '0'/'1'                    Set stream              Current: "+to_string(this->profile.stream)+"\n";
+            I+="  7 <float>                    Set temperature         Current: "+to_string(this->profile.temperature)+"\n";
+            I+="  8 <float>                    Set top_p               Current: "+to_string(this->profile.top_p)+"\n";
+            I+="  9 <int>                      Set max messages        Current: "+to_string(this->profile.max_message)+"\n";
+            I+=" 10 'none'/'auto'/'required'   Set tool choice         Current: "+this->profile.tool_choice+"\n";
             break;
     }
     return I;
