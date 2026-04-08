@@ -15,16 +15,48 @@ namespace fs = std::filesystem;
 #define PRINT_ERROR std::cout<<"Unexpected Error Occurred : 12";
 
 //main tool
+string read_as_string(const string& home,const string& room,const char* filename){
+    std::string output="";
+    fs::path p=fs::path(home)/room/filename;  
+    std::ifstream file(p.string());
+    if (file.is_open()) {
+        file.seekg(0, std::ios::end);
+        int size_ = file.tellg();
+        file.seekg(0, std::ios::beg);
+        
+        output.resize(size_);
+        file.read(&output[0], size_);
+        file.close();
+    } else {
+        output="none Description";
+        cout<<"Warning:"<<home<<"/"<<filename<<" is not found\n";
+    }
+    return output;
+}
+string read_as_string(const string& home,const char* filename){
+    std::string output="";
+    fs::path p=fs::path(home)/filename;  
+    std::ifstream file(p.string());
+    if (file.is_open()) {
+        file.seekg(0, std::ios::end);
+        int size_ = file.tellg();
+        file.seekg(0, std::ios::beg);
+        
+        output.resize(size_);
+        file.read(&output[0], size_);
+        file.close();
+    } else {
+        cout<<"Warning:"<<home<<"/"<<filename<<" is not found\n";
+    }
+    return output;
+}
 json handle_read_json(const string& home,const string& room,const string& filename){
     json data={};
-    
     fs::path file_in_working_folder = fs::path(home)/room/"file_test_if_Exists.txt"; 
     fs::create_directories(file_in_working_folder.parent_path());
     if(filename.empty())return data;
     fs::path p=fs::path(home)/room  / filename;
-    
     std::ifstream file(p.string());
- 
     try{
         data = json::parse(file);
         cout<<"System : Reading file "<<room<<"/"<<filename<<endl;
@@ -78,8 +110,8 @@ json handle_registration(const string definition_[][5],size_t amount,vector<stri
 };
 
 string handle_get_history(const string& home, const string& room,int choice) {
-    fs::path file_in_working_folder = fs::path(home) / room / "file_test_if_Exists.txt";
-    fs::create_directories(file_in_working_folder.parent_path());
+    //fs::path file_in_working_folder = fs::path(home) / room / "file_test_if_Exists.txt";
+    //fs::create_directories(file_in_working_folder.parent_path());
     fs::path dir_path = fs::path(home) / room;
     int count=0;
     string message="please specify a tag of history file:\n";

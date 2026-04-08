@@ -56,7 +56,6 @@ static std::string detect_image_format(std::vector<unsigned char>& data) {
     return "2";
 }
 
-
 FileCategory check_file_type(const string& path){
     size_t dotPos = path.find_last_of('.');
     if (dotPos == std::string::npos || dotPos == path.size()-1)return NOT_FOUND;
