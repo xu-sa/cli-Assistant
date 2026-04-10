@@ -135,7 +135,6 @@ void sagtlib::Agent::handle_input(){
 string sagtlib::Agent::attach_file(const std::string& path){
     string suffix="";
     FileCategory type= check_file_type(path);
-    PRINT_TEST(type);
     switch (type)
     {
     case NOT_FOUND:
