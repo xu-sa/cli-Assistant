@@ -51,8 +51,7 @@ static std::string detect_image_format(std::vector<unsigned char>& data) {
     if ((char)data[0] == (char)0x89 && (char)data[1] == (char)0x50 && 
         (char)data[2] == (char)0x4E && (char)data[3] == (char)0x47) return "data:image/png;";
     if ((char)data[0] == 'G' && (char)data[1] == 'I' && (char)data[2] == 'F') return "data:image/gif;";
-    if ((char)data[0] == 'R' && (char)data[1] == 'I' && 
-        (char)data[2] == 'F' && (char)data[3] == 'F') return "data:image/webp;";
+    if ((char)data[0] == 'R' && (char)data[1] == 'I' && (char)data[2] == 'F' && (char)data[3] == 'F') return "data:image/webp;";
     return "2";
 }
 
@@ -61,9 +60,8 @@ FileCategory check_file_type(const string& path){
     if (dotPos == std::string::npos || dotPos == path.size()-1)return NOT_FOUND;
     string I=path.substr(dotPos);
     auto it = file_type_map.find(I);
-    if(it!=file_type_map.end()){
-        return it->second;
-    }else return NO_MARCH;
+    if(it!=file_type_map.end())return it->second;
+    else return NO_MARCH;
 }
 
 std::string decode_image(const std::string& filepath) {
