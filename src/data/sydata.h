@@ -3,7 +3,7 @@
 #define PROVIDER_SIZE sizeof(urls)/sizeof(urls[0])
 #define MODEL_OPTION 5
 #define OPEN_ROUTE_SIZE sizeof(models_open_router) / sizeof(models_open_router[0])
-
+#define LOCAL_USER "super user"
 #include <string>
 const std::string models[][5]={
     {"deepseek-chat","deepseek-reasoner","","",""},
@@ -31,5 +31,6 @@ const std::string urls[][2]={
     {"https://api.cohere.ai/compatibility/v1/chat/completions","Cohere"},
     {"https://openrouter.ai/api/v1/chat/completions","OpenRouter"}
 };
+
 
 #endif
