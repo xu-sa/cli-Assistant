@@ -21,6 +21,7 @@ struct inputs_{
     std::string message;
     std::string image;
     int client_socket;
+    std::string client_id;
 };  
 
 struct SKILL{
@@ -32,7 +33,6 @@ struct SKILL{
 
 struct Model_setup{
     std::string name;
-    //std::string whoyouare;//
     std::string api;
     int provider;//LLM provider
     int model;//LLM model,Varies from provider
@@ -58,43 +58,40 @@ namespace sagtlib{
         nlohmann::json get_skills();//get tool discriptions from Assigned tool array
         void handle_tool_request(nlohmann::json *);//Parse what tool and parameter need to use
         std::string send();//send message 
-        std::string load_cfg();//load config from home/room/ , would not reload chat history
+        std::string load_cfg(const std::string& );//load config from home/room/ , would not reload chat history
         std::string save(const std::string &choice);//to save whether config or chat history to home/room/
         std::string load_cht(const std::string&);//to locd cached chat from workspace
         //stage 2
-        void push_input(int socket,const std::string& text ) override;//to add a new message to prepare for handling
+        void push_input(int socket,const std::string& client_id,const std::string& text,const std::string& image) override;//to add a new message to prepare for handling
         void start_main_thread();//start instance thread
-        void start_server_thread(const std::string& port)override;//start listening to server
-        void stop_server_thread()override;
+        std::string start_server_thread(const std::string& port)override;//start listening to server
+        std::string stop_server_thread(const std::string& none)override;
         void stop_all_thread();//stop instance thread
         void listen_input();//loop to check whether to send message
         //stage 3
         void terminalsession(bool)override;
         void handle_input();
         std::string attach_file(const std::string&);//to attach a file in the next message
-        std::string config(const std::string &);//set config 
-        std::string help();//return help message
-        std::string help_provider();//return help message
-        std::string help_model();//return help message
-        std::string help_open_route_model();//return help message
+        std::string config(const std::string&);//set config 
         //Network Socket
-        void respond_socket(const std::string&,int);
+        void respond_socket(const std::string&,int,int);
         // void respond_socket(const std::string&);
         //void cout_to_web(int socket,const std::string&);
         void start_server();//start server and bind on a specified port
         void stop_server();//stop server
         void listen_server();//loop to wait and handle port Requests
+        inputs_ input_pool[INPUT_POOL_SIZE];
+        int push_in;
+        int push_out;
+        bool on;
+        std::deque<nlohmann::json> message_pool;//all the mssages
+        int chat_state;
         
     private:
         Model_setup profile;//a Structure Containing all the configs of LLM
-        std::deque<nlohmann::json> message_pool;//all the mssages
         //inputs buffer and indications
-        inputs_ input_pool[INPUT_POOL_SIZE];
         int queued_input;
-        int push_in;
-        int push_out;
         //bool image_attached;
-        int chat_state;
         int working_count;
         int fail_count;
         //server socket number disturbed by kernel 
@@ -102,15 +99,13 @@ namespace sagtlib{
         //to load the built in skills and user customised tools
         std::vector<SKILL> SKILLs;        
         std::unordered_map<std::string, size_t> SKILL_map;
-        //home/room will be used as the workspace of the agent. room would be the name of agent
         std::string home;
         std::string room;
-        //the Multi thread setting , by Default there are two threads 
+        //the Multi thread setting 
         std::mutex input_mutex;  
         std::thread main_thread; 
         std::thread server_thread;
         //whether the thread function should be force to stop to end the whole Process
-        bool on;
     };
 }
 #endif

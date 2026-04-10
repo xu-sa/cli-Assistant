@@ -13,7 +13,7 @@
     #include <sys/socket.h>
     #include <netinet/in.h>
     #include <unistd.h>   
-    #define CLOSE_SOCKET close
+    #define CLOSE_SOCKET close;
     #define SHUTDOWN(sock, how) shutdown(sock, how)
 #endif
 #define PRINT_ERROR std::cout<<"Unexpected Error Occurred : 8";
@@ -29,7 +29,6 @@ static void handle_client_in(sagtlib::Agent* agent,int socket){
         // recv
         int n = recv(socket, buffer, sizeof(buffer) - 1, 0);
         if (n <= 0) break; 
-        
         buffer[n] = '\0';
         buffer_string.append(buffer, n);
         head_end = buffer_string.find("\r\n\r\n");
@@ -39,9 +38,10 @@ static void handle_client_in(sagtlib::Agent* agent,int socket){
     }
     
     if (body_content_info == std::string::npos) {// response a GET 
-        agent->respond_socket(agent->help(),2);// post a data here
+        agent->respond_socket("",2,socket);
+        return;
     }
-    { // start to Receive json content
+    {// start to Receive json content
         try {
             int i = std::stoul(buffer_string.substr(body_content_info + 16)); 
             size_t content_got = buffer_string.length() - (head_end + 4);
@@ -60,11 +60,16 @@ static void handle_client_in(sagtlib::Agent* agent,int socket){
     
     try{ // handle POST request
         json j = json::parse(buffer_string.substr(head_end + 4));
-        if (j["message"].is_string()&&j["message"]!="")agent->push_input(socket, j["message"]);//push in message
-        else CLOSE_SOCKET(socket);//unexpected issue
+        json to_send={{"message",""},{"image",""},{"id",""}};
+        {
+            if(j["id"].is_string()&&j["id"]!="")to_send["id"]=j["id"];
+            if (j["message"].is_string()&&j["message"]!="")to_send["message"]=j["message"];
+            if (j["image"].is_string()&&j["image"]!="")to_send["image"]=j["image"];
+        }
+        agent->push_input(socket,to_send["id"],to_send["message"],to_send["image"]);
     } catch (const std::exception& e) { // client Post a unparsable data
         std::cout << "Unexpected error: " << e.what() << "\n";
-        agent->respond_socket(e.what(),2);// response here
+        agent->respond_socket(e.what(),2,socket);// response here
     }
 
 }
@@ -77,8 +82,7 @@ inline static void send_chunk(int client_fd, const std::string& data) {
     ::send(client_fd, packet.c_str(), packet.length(), 0);
 }
 
-void sagtlib::Agent::respond_socket(const std::string& data, int type) {
-    int client_fd = this->input_pool[this->push_out].client_socket;
+void sagtlib::Agent::respond_socket(const std::string& data, int type,int client_fd) {
     switch(type){
         case 0://start stream
             {
@@ -113,8 +117,7 @@ void sagtlib::Agent::respond_socket(const std::string& data, int type) {
                 package["message"]=data;
                 
                 std::string body=package.dump();
-                std::string to_send = "POST /path HTTP/1.1\r\n"
-                      "Host: example.com\r\n"
+                std::string to_send = "HTTP/1.1 200 OK\r\n"
                       "Content-Type: application/json\r\n"
                       "Content-Length: " + std::to_string(body.size()) + "\r\n"
                       "\r\n" + body;
@@ -131,6 +134,16 @@ void sagtlib::Agent::respond_socket(const std::string& data, int type) {
     }
 };
 
+void sagtlib::Agent::listen_server() {
+    while (this->on && this->socket_num != -1) {
+        sleep_2(2);
+        int socket_in=accept(this->socket_num, nullptr, nullptr);
+        if (socket_in == -1)break;
+        std::cout << "got one client connecting to socket " << socket_in << "\n";
+        handle_client_in(this,socket_in);
+    }
+}
+
 void sagtlib::Agent::start_server() {
     #ifdef _WIN32//Optimization for windows
         WSADATA wsaData;
@@ -139,12 +152,7 @@ void sagtlib::Agent::start_server() {
             return;
         }
     #endif
-    
-
-    sleep_2(3);
-    
     this->socket_num = socket(AF_INET, SOCK_STREAM, 0);
-    
     if (this->socket_num == -1) { 
         std::cerr << "Socket creation failed\n";
         return;
@@ -187,15 +195,5 @@ void sagtlib::Agent::stop_server() {
         CLOSE_SOCKET(this->socket_num);
         this->socket_num = -1;
         std::cout<<"stopped server\n";
-    }
-}
-
-void sagtlib::Agent::listen_server() {
-    while (this->on && this->socket_num != -1) {
-        sleep_2(2);
-        int socket_in=accept(this->socket_num, nullptr, nullptr);
-        if (socket_in == -1)break;
-        std::cout << "got one client connecting to socket " << socket_in << "\n";
-        handle_client_in(this,socket_in);
     }
 }

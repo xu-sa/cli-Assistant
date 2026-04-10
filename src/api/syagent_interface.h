@@ -21,10 +21,10 @@ namespace sagtlib{
         bool debugger;
         virtual ~sagent();
         virtual void register_tool(const std::string definition_[][5],size_t,std::function<std::string(const std::string*)> func) = 0;
-        virtual void start_server_thread(const std::string& port)=0;
-        virtual void stop_server_thread()=0;
-        virtual void push_input(int cli_or_web,const std::string& text)=0;//CLI_or_web defines to where the output and Reply be printed
-        virtual void terminalsession(bool)=0;//to start a termianl-only session for chat Process 
+        virtual std::string start_server_thread(const std::string& port)=0;
+        virtual std::string stop_server_thread(const std::string&)=0;
+        virtual void push_input(int socket,const std::string& client_id,const std::string& text,const std::string& image)=0;//CLI_or_web defines to where the output and Reply be printed
+        virtual void terminalsession(bool)=0;//to start a termianl session for chat Process 
         int port_num;//the program listen on this port
         void toggle_debug();//this will give more outputs for referring working states in terminal
         static sagent* create(const char* home,const std::string& room); //-home: indicates the workspace path, recommend to use it as the argument from main entrance function. -room: the name of the agent's setting,Memory files and chat history , will create a new one if not exsist within the '-home' 

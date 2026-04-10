@@ -19,7 +19,6 @@ void sagtlib::Agent::register_tool(const string definition_[][5],size_t amount, 
     new_skill.state=true;
     this->SKILLs.push_back(new_skill);
     this->SKILL_map[definition["function"]["name"]]=this->SKILLs.size()-1;
-    //cout<<"adding tool :"<<new_skill.definition["function"]["name"]<<endl;
     return;
 }
 
@@ -43,7 +42,6 @@ json sagtlib::Agent::run_tool(size_t index,json* data){
                 std::cout << str << "; ";
             };
         }
-        
         {//get result from tool and build the json
             string res=this->SKILLs[index].Actual_tool(data_);
             if((*data)["name"]=="get_image"){//if using image tool
@@ -56,7 +54,6 @@ json sagtlib::Agent::run_tool(size_t index,json* data){
                 result["content"]=res;
             }
         }
-        
         this->working_count+=1;
         this->fail_count=0;
     }
@@ -169,7 +166,7 @@ string sagtlib::Agent::send(){
     return (message_reply.empty()?(this->profile.name+" : "+".."):message_reply);
 }
 
-string sagtlib::Agent::load_cfg(){
+string sagtlib::Agent::load_cfg(const string& a){
     
     {//the Model setup
         json data=handle_read_json(this->home,this->room,"profile.json");//build the home/room/profile.json path and read file
@@ -273,16 +270,16 @@ string sagtlib::Agent::save(const string& choice){
 }
 
 sagtlib::Agent::Agent(const string& home,const string& room):home(home),room(room){
-    cout<<this->load_cfg();
-    {//server setting
+    {//preconfig
         this->port_num=-1;
         this->socket_num=-1;//will be distributed by system kernel 
+        this->start_main_thread();
+        for (int i = 0; i < INPUT_POOL_SIZE; ++i)this->input_pool[i] = inputs_{.message="",.image="",.client_socket=0}; 
+        this->push_in=0;
+        this->push_out=0;
+        this->queued_input=0;
     }
-    this->start_main_thread();
-    for (int i = 0; i < INPUT_POOL_SIZE; ++i)this->input_pool[i] = inputs_{.message="",.image="",.client_socket=0}; 
-    this->push_in=0;
-    this->push_out=0;
-    this->queued_input=0;
+    cout<<this->load_cfg("");
 }
 
 sagtlib::Agent::~Agent(){

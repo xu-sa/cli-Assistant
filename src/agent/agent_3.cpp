@@ -4,24 +4,117 @@
 #include "../utils/file/util_parse_file.h"
 #include <iostream>
 #define PRINT_ERROR std::cout<<"Unexpected Error Occurred : 7";
+#define PRINT_TEST(x) std::cout<<"debugger "<<x<<"\n";
 using json=nlohmann::json;
 using namespace std;
+const char* help_message_1="\
+No Such Command,Available:\n\
+    /relop                    --reload profile for this agent\n\
+    /reloh                    --reload chat for this agent\n\
+    /save 'h'/'p'             --choose to save history(h) or config profile(p)\n\
+    /config <int>             --to alter configuration\n";
+//    /file <path>              --to add a file\n
+const char* help_message_2="\
+Commands below are only Available for this termial:\n\
+    /exit                     --terminate this session and this agent\n\
+    /serveron <int>           --start server on Specified port\n\
+    /serveroff                --stop server\n\
+    /send <string>            --to send message to agent\n";
+
+static string help_provider(){
+    string I;
+    for(int i=0;i<PROVIDER_SIZE;i++)if(!urls[i][1].empty())I+="    "+to_string(i)+". "+urls[i][1]+"\n";
+    return I;
+}
+
+static string help_open_route_model(){
+    string I;
+    for(int i=0;i<OPEN_ROUTE_SIZE;i++)if(!models_open_router[i].empty())I+="    "+to_string(i)+". "+models_open_router[i]+"\n";
+    return I;
+}
+
+static string help_model(int i ){
+    string I;
+    if(urls[i][1]=="Local LLM")return "Local LLM model is not defined here, it depends on your setup\n";
+    if(urls[i][1]=="OpenRouter")return "Open Route provides models that can be viewed via /config 5\n";
+    for(int i=0;i<5;i++)if(!models[i][i].empty())I+="    "+to_string(i)+". "+models[i][i]+"\n";
+    return I;
+}
+
+static int handle_command(sagtlib::Agent* a,int socket_){
+    string command ,value;
+    {
+        istringstream ss(a->input_pool[a->push_out].message);
+        ss>>command;
+        ss.seekg(1,ios::cur);//jump over space Between command and value 
+        getline(ss,value);
+    }
+    if(socket_==-1){
+        if(command=="/exit")a->on=0;
+        else if(command=="/send"){
+            if(value[0]=='@'){
+                string filepath;
+                value=value.substr(2);
+                size_t fileend = value.find_first_of(" ", 1);
+                if(fileend==string::npos)fileend=value.length()-1;
+                filepath=value.substr(0,fileend);
+                cout<<a->attach_file(filepath);//this->input_pool[this->push_out].image handled
+                a->input_pool[a->push_out].message=value.substr(fileend+1);
+            }else a->input_pool[a->push_out].message=value;
+            return -1;
+        }//only for terminal
+        else if(command=="/serveron")cout<<a->start_server_thread(value);//only for terminal
+        else if(command=="/serveroff")cout<<a->stop_server_thread(value);//only for terminal
+        else if(command=="/save")cout<<a->save(value);
+        else if(command=="/relop")cout<<a->load_cfg(value);
+        else if(command=="/reloh")cout<<a->load_cht(value);
+        else if(command=="/config")cout<<a->config(value);
+        else cout<<help_message_1<<help_message_2;
+    }
+    else if(socket_>=4){
+        a->respond_socket("",0,socket_);//start socket
+        if(command=="/save")a->respond_socket(a->save(value),1,socket_);
+        else if(command=="/relop")a->respond_socket(a->load_cfg(value),1,socket_);
+        else if(command=="/reloh")a->respond_socket(a->load_cht(value),1,socket_);
+        else if(command=="/config")a->respond_socket(a->config(value),1,socket_);
+        else a->respond_socket(help_message_1,1,socket_);
+        a->respond_socket("",-1,socket_);//close socket
+    }
+    else PRINT_ERROR
+ 
+    return 0;
+
+}
+
+static void handle_send(sagtlib::Agent* a,int to_send){
+    if(a->input_pool[a->push_out].image[0]=='d'){//there is a image attached 
+            json content=json::array();
+            content.push_back({{"type","text"},{"text",a->input_pool[a->push_out].client_id+": "+a->input_pool[a->push_out].message}});
+            content.push_back({{"type", "image_url"},{ "image_url",{{"url",a->input_pool[a->push_out].image}}}});//data:image/png;base64,iVBO.....
+            a->message_pool.push_back({{"role","user"},{"content",content}});
+    }
+    else a->message_pool.push_back({{"role","user"},{"content",a->input_pool[a->push_out].client_id+": "+a->input_pool[a->push_out].message}});
+    if(to_send==1){//send to socket
+        a->respond_socket("",0,a->input_pool[a->push_out].client_socket);//start socket
+        a->respond_socket(a->send()+"\n",1,a->input_pool[a->push_out].client_socket);
+        while (a->chat_state!=1)a->respond_socket(a->send()+"\n",1,a->input_pool[a->push_out].client_socket);
+        a->respond_socket("",-1,a->input_pool[a->push_out].client_socket);//close socket
+    }
+    else{//send to terminal
+        cout<<a->send()<<endl;
+        while (a->chat_state!=1)cout<<a->send()<<endl;
+    }
+}
 
 void sagtlib::Agent::terminalsession(bool a){//start a terminal session for chating
     string input;
     if(!a){
-        while (this->on)
-        {
-            sleep_2(10);
-            //cout<<"\n>>";
-            //getline(cin,input);
-            //if(input=="/exit")break;   
-        }
+        while (this->on)sleep_2(10);  
     }else{
         while (this->on)
             {
                 getline(cin,input);
-                this->push_input(-1,input);
+                this->push_input(-1,LOCAL_USER,input,"");
                 while (this->queued_input!=0)sleep_2(3)
             }   
     }
@@ -29,73 +122,20 @@ void sagtlib::Agent::terminalsession(bool a){//start a terminal session for chat
 }
 
 void sagtlib::Agent::handle_input(){
-    int from=this->input_pool[this->push_out].client_socket;
+    int socket_=this->input_pool[this->push_out].client_socket;
     int to_send=0;
-    if(this->input_pool[this->push_out].message[0] == '/'){//user need to Execute commands
-        string command ,value;
-        istringstream ss(this->input_pool[this->push_out].message);
-        {
-            ss>>command;
-            ss.seekg(1,ios::cur);//jump over space Between command and value 
-            getline(ss,value);
-        }
-        if(from==-1){
-            if(command=="/exit")this->on=0;
-            else if(command=="/save")cout<<this->save(value);
-            else if(command=="/relop")cout<<this->load_cfg();
-            else if(command=="/reloh")cout<<this->load_cht(value);
-            else if(command=="/file")cout<<this->attach_file(value);
-            else if(command=="/config")cout<<this->config(value);
-            else if(command=="/serveron")this->start_server_thread(value);//only for terminal
-            else if(command=="/serveroff")this->stop_server_thread();//only for terminal
-            else if(command=="/send")to_send=-1;//only for terminal
-            else cout<<this->help()<< "Commands below are only Available for this termial:\n"
-                                    <<"    /exit                     ——terminate this session and this agent\n"
-                                    <<"    /serveron <int>           ——start server on Specified port\n"
-                                    <<"    /serveroff                ——stop server\n"
-                                    <<"    /send <any>               ——to send message to agent\n";
-        }
-        else if(from>=4){
-            this->respond_socket("",0);//start socket
-            if(command=="/save")this->respond_socket(this->save(value),1);
-            else if(command=="/relop")this->respond_socket(this->load_cfg(),1);
-            else if(command=="/reloh")this->respond_socket(this->load_cht(value),1);
-            else if(command=="/file")this->respond_socket(this->attach_file(value),1);
-            else if(command=="/config")this->respond_socket(this->config(value),1);
-            else this->respond_socket(this->help(),1);
-            this->respond_socket("",-1);//close socket
-        }
-        else PRINT_ERROR
-    }
-    else if(from>=4)to_send=1;
-    else if(from==-1)cout<<"unknown input, please use '/' for Instructions"<<endl;
+    if(this->input_pool[this->push_out].message[0] == '/')to_send=handle_command(this,socket_);
+    else if(socket_>=4)to_send=1;
+    else if(socket_==-1)cout<<"unknown input, please use '/' for Instructions"<<endl;
     else PRINT_ERROR;
-    if(to_send!=0){//have a message to send
-        if(to_send==-1)this->input_pool[this->push_out].message.erase(0,6);//get rid of the command prompt
-        if(this->input_pool[this->push_out].image[0]=='d'){//there is a image attached 
-            json content=json::array();
-            content.push_back({{"type","text"},{"text",this->input_pool[this->push_out].message}});
-            content.push_back({{"type", "image_url"},{ "image_url",{{"url",this->input_pool[this->push_out].image}}}});//data:image/png;base64,iVBO.....
-            this->message_pool.push_back({{"role","user"},{"content",content}});
-        
-        }
-        else this->message_pool.push_back({{"role","user"},{"content",this->input_pool[this->push_out].message}});
-        if(to_send==1){//send to socket
-            this->respond_socket("",0);//start socket
-            this->respond_socket(this->send()+"\n",1);
-            while (this->chat_state!=1)this->respond_socket(this->send()+"\n",1);
-            this->respond_socket("",-1);//close socket
-        }
-        else{//send to terminal
-            cout<<this->send()<<endl;
-            while (this->chat_state!=1)cout<<this->send()<<endl;
-        }
-    }else return;
+    if(to_send==0)return;
+    handle_send(this,to_send);
 }
 
 string sagtlib::Agent::attach_file(const std::string& path){
     string suffix="";
     FileCategory type= check_file_type(path);
+    PRINT_TEST(type);
     switch (type)
     {
     case NOT_FOUND:
@@ -103,21 +143,21 @@ string sagtlib::Agent::attach_file(const std::string& path){
     case NO_MARCH:
         return "this file '"+path+"' is found but not supported(x)\n";
     case IMAGE:
-        this->input_pool[this->push_in].image=decode_image(path);
-        if(this->input_pool[this->push_in].image[0]=='d')return "add a image '"+path+"'\n";
-        else if(this->input_pool[this->push_in].image[0]=='0')return "Detected image path but Cant open(x)\n";
-        else if(this->input_pool[this->push_in].image[0]=='1')return "image is too large to add(x)\n";
-        else if(this->input_pool[this->push_in].image[0]=='2')return "image file detected but doesn't seem to be in good Format\n";
+        this->input_pool[this->push_out].image=decode_image(path);
+        if(this->input_pool[this->push_out].image[0]=='d')return "add a image '"+path+"'\n";
+        else if(this->input_pool[this->push_out].image[0]=='0')return "Detected image path but Cant open(x)\n";
+        else if(this->input_pool[this->push_out].image[0]=='1')return "image is too large to add(x)\n";
+        else if(this->input_pool[this->push_out].image[0]=='2')return "image file detected but doesn't seem to be in good Format\n";
         else PRINT_ERROR
-        this->input_pool[this->push_in].image.clear();
+        this->input_pool[this->push_out].image.clear();
     case DOCUMENT:
-        this->input_pool[this->push_in].message+=decode_txt(path);
+        this->input_pool[this->push_out].message+=decode_txt(path);
         return "add a text '"+path+"' \n";
     case AUDIO:
-        this->input_pool[this->push_in].message+=decode_audio(path);
+        this->input_pool[this->push_out].message+=decode_audio(path);
         return "add a audio '"+path+"' \n";
     case VIDEO:
-        this->input_pool[this->push_in].message+=decode_video(path);
+        this->input_pool[this->push_out].message+=decode_video(path);
         return "add a video '"+path+"' \n";
     default:
         return "Unexpected file type\n";
@@ -125,18 +165,14 @@ string sagtlib::Agent::attach_file(const std::string& path){
 }
 
 string sagtlib::Agent::config(const string& option){
-    string I;
-    istringstream sss(option);
-    int choice;
-    string value;
-    if(!(sss>>choice)){
-        choice=999;
-    }
-    sss.seekg(1,ios::cur);
-    getline(sss,value);
-    int value_int;
+    int choice,value_int;
     float value_float;
+    string I,value;
     {
+        istringstream sss(option);
+        if(!(sss>>choice))choice=999;
+        sss.seekg(1,ios::cur);
+        getline(sss,value);
         try{
             value_int=stoi(value);
         }catch(const exception& e){
@@ -148,7 +184,6 @@ string sagtlib::Agent::config(const string& option){
             value_float=-24.0f;
         } 
     }
-    
     switch(choice){
         case 0:
             this->profile.local_llm_socket=(value_int>0?value_int:-1);
@@ -158,24 +193,20 @@ string sagtlib::Agent::config(const string& option){
             this->profile.api=(value.empty()?this->profile.api:value);
             I="\nCurrent api: "+this->profile.api+"\n";
             break;
-        // case 2:
-        //     this->profile.whoyouare=(value.empty()?this->profile.whoyouare:value);
-        //     I="\nCurrent Discription: "+this->profile.whoyouare+"\n";
-        //     break;
         case 2:
             this->profile.provider= (value_int>=0&&value_int<PROVIDER_SIZE?value_int:this->profile.provider);
-            I=this->help_provider();
+            I=help_provider();
             this->profile.model=0;
             I+="\nCurrent provider: "+to_string(this->profile.provider)+"\n";
             break;
         case 3:
             this->profile.model=(value_int>=0&&value_int<MODEL_OPTION?value_int:this->profile.model);
-            I=this->help_model();
+            I=help_model(this->profile.provider);
             I+="\nCurrent model: "+to_string(this->profile.model)+"\n";
             break;
         case 4:
             this->profile.openroute_model=(value_int>=0&&value_int<OPEN_ROUTE_SIZE?value_int:this->profile.openroute_model);
-            I=this->help_open_route_model();
+            I=help_open_route_model();
             I+="\nCurrent open route model: "+to_string(this->profile.openroute_model)+"\n";
             break;
         case 5:
@@ -205,48 +236,20 @@ string sagtlib::Agent::config(const string& option){
         default:
             I= "Configuration: No Such Option\n";
             I+="Usage:/config [option] [value]\n";
-            I+="  0 <int>                      Set local LLM Socket (this overrides model/provider config)    Current: "+(this->profile.local_llm_socket==-1?"None":to_string(this->profile.local_llm_socket))+"\n";
-            I+="  1 <string>                   Set API key \n";
-            I+="  2 <int>                      Set LLM provider        (leave [value] empty to get hint)      Current: "+to_string(this->profile.provider)+"\n";
-            I+="  3 <int>                      Set LLM model           (leave [value] empty to get hint)      Current: "+to_string(this->profile.model)+"\n";
-            I+="  4 <int>                      Set LLM open route model(leave [value] empty to get hint)      Current: "+to_string(this->profile.openroute_model)+"\n";
-            I+="  5 <int>                      Set max tokens          Current: "+to_string(this->profile.max_tokens)+"\n";
-            I+="  6 '0'/'1'                    Set stream              Current: "+to_string(this->profile.stream)+"\n";
-            I+="  7 <float>                    Set temperature         Current: "+to_string(this->profile.temperature)+"\n";
-            I+="  8 <float>                    Set top_p               Current: "+to_string(this->profile.top_p)+"\n";
-            I+="  9 <int>                      Set max messages        Current: "+to_string(this->profile.max_message)+"\n";
-            I+=" 10 'none'/'auto'/'required'   Set tool choice         Current: "+this->profile.tool_choice+"\n";
+            I+="  0 <int>                      --Set local LLM Socket (this overrides model/provider config)    Current: "+(this->profile.local_llm_socket==-1?"None":to_string(this->profile.local_llm_socket))+"\n";
+            I+="  1 <string>                   --Set API key \n";
+            I+="  2 <int>                      --Set LLM provider        (leave [value] empty to get hint)      Current: "+to_string(this->profile.provider)+"\n";
+            I+="  3 <int>                      --Set LLM model           (leave [value] empty to get hint)      Current: "+to_string(this->profile.model)+"\n";
+            I+="  4 <int>                      --Set LLM open route model(leave [value] empty to get hint)      Current: "+to_string(this->profile.openroute_model)+"\n";
+            I+="  5 <int>                      --Set max tokens          Current: "+to_string(this->profile.max_tokens)+"\n";
+            I+="  6 '0'/'1'                    --Set stream              Current: "+to_string(this->profile.stream)+"\n";
+            I+="  7 <float>                    --Set temperature         Current: "+to_string(this->profile.temperature)+"\n";
+            I+="  8 <float>                    --Set top_p               Current: "+to_string(this->profile.top_p)+"\n";
+            I+="  9 <int>                      --Set max messages        Current: "+to_string(this->profile.max_message)+"\n";
+            I+=" 10 'none'/'auto'/'required'   --Set tool choice         Current: "+this->profile.tool_choice+"\n";
             break;
     }
     return I;
 }
 
-string sagtlib::Agent::help(){
-    string I="No Such Command,Available:\n";
-    I+="    /relop                    ——reload profile for this agent\n";
-    I+="    /reloh                    ——reload chat for this agent\n";
-    I+="    /save 'h'/'p'             ——choose to save history(h) or config profile(p)\n";
-    I+="    /config <int> <value>     ——set different profile parameter\n";
-    I+="    /file <path>              ——To insert a local file in the chat to send, will only apply to the next sending session\n";
-    return I;
-}
 
-string sagtlib::Agent::help_provider(){
-    string I;
-    for(int i=0;i<PROVIDER_SIZE;i++)if(!urls[i][1].empty())I+="    "+to_string(i)+". "+urls[i][1]+"\n";
-    return I;
-}
-
-string sagtlib::Agent::help_open_route_model(){
-    string I;
-    for(int i=0;i<OPEN_ROUTE_SIZE;i++)if(!models_open_router[i].empty())I+="    "+to_string(i)+". "+models_open_router[i]+"\n";
-    return I;
-}
-
-string sagtlib::Agent::help_model(){
-    string I;
-    if(urls[this->profile.provider][1]=="Local LLM")return "Local LLM model is not defined here, it depends on your setup\n";
-    if(urls[this->profile.provider][1]=="OpenRouter")return "Open Route provides models that can be viewed via /config 5\n";
-    for(int i=0;i<5;i++)if(!models[this->profile.provider][i].empty())I+="    "+to_string(i)+". "+models[this->profile.provider][i]+"\n";
-    return I;
-}
