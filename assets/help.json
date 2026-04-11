@@ -1,0 +1,12 @@
+{
+    "name":"help",
+    "description": "Guide you how to use pyskills,All pyskill recevies json string as parameter e.g : {\"p1\":\"1\",\"p2\":\"2\"}",
+    "parameters":[
+        {
+          "name":"skill_name",
+          "type": "string",
+          "description": "to give out the Definition of one pyskill",
+          "required": "true"
+        }
+    ]
+}
