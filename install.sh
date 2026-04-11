@@ -13,6 +13,9 @@ BINARY_NAME="syagent"
 AGENT_NAME="linux-bot"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BINARY_PATH="$SCRIPT_DIR/test/bin/$BINARY_NAME"
+ 
+ 
+
 check_binary() {
     echo -e "${YELLOW}checking file...${NC}"
     
@@ -41,6 +44,7 @@ copy_files() {
     echo -e "${YELLOW}copying...${NC}"
 
     cp "$BINARY_PATH" "$INSTALL_DIR/"
+    
     chmod +x "$INSTALL_DIR/$BINARY_NAME"
     
     echo -e "${GREEN}✓ copied binary${NC}"
@@ -113,6 +117,17 @@ setup_workspace(){
     mkdir -p "$HOME/.slcache/$AGENT_NAME"
     cp ./assets/IDENTITY.md "$HOME/.slcache/$AGENT_NAME/"
     cp ./assets/SUBRULE.md "$HOME/.slcache/$AGENT_NAME/"
+    EXTENSION_DIR="$HOME/.slcache/.extension"
+    echo "Workspace created at: $HOME/.slcache"
+    mkdir -p "$EXTENSION_DIR"
+    python3 -m venv "$EXTENSION_DIR/venv"
+    mkdir -p "$EXTENSION_DIR/help"
+    source "$EXTENSION_DIR/venv/bin/activate"
+    pip install --upgrade pip
+    deactivate
+    cp "./assets/help.py" "$EXTENSION_DIR/help/"
+    cp "./assets/help.json" "$EXTENSION_DIR/help/"
+    echo "Extension environment created at: $EXTENSION_DIR"
 }
 main() {
     echo -e "${GREEN}start to install Syagent user service...${NC}"
@@ -122,6 +137,7 @@ main() {
     create_directories
     copy_files
     create_service_file
+
     setup_systemd
     start_service
 }   
