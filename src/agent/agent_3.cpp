@@ -6,14 +6,15 @@
 #define PRINT_ERROR std::cout<<"Unexpected Error Occurred : 7";
 #define PRINT_TEST(x) std::cout<<"debugger "<<x<<"\n";
 using json=nlohmann::json;
-using namespace std;
+using namespace std; //   /loads <path>             --load skill from select folder\n
 const char* help_message_1="\
 No Such Command,Available:\n\
-    /relop                    --reload profile for this agent\n\
-    /reloh                    --reload chat for this agent\n\
-    /save 'h'/'p'             --choose to save history(h) or config profile(p)\n\
-    /config <int>             --to alter configuration\n";
-//    /file <path>              --to add a file\n
+    /loadp                    --load profile for this agent\n\
+    /loadh <int>              --load chat for this agent\n\
+    /loade <path>             --load Extend python skills\n\
+    /save 'h'/'p'             --choose to save history(h) or agent profile(p)\n\
+    /config <int>             --to alter configuration\n\
+    /file <path>              --to add a file\n";
 const char* help_message_2="\
 Commands below are only Available for this termial:\n\
     /exit                     --terminate this session and this agent\n\
@@ -42,6 +43,7 @@ static string help_model(int i ){
 }
 
 static int handle_command(sagtlib::Agent* a,int socket_){
+ 
     string command ,value;
     {
         istringstream ss(a->input_pool[a->push_out].message);
@@ -66,18 +68,22 @@ static int handle_command(sagtlib::Agent* a,int socket_){
         else if(command=="/serveron")cout<<a->start_server_thread(value);//only for terminal
         else if(command=="/serveroff")cout<<a->stop_server_thread(value);//only for terminal
         else if(command=="/save")cout<<a->save(value);
-        else if(command=="/relop")cout<<a->load_cfg(value);
-        else if(command=="/reloh")cout<<a->load_cht(value);
+        else if(command=="/loadp")cout<<a->load_cf();
+        else if(command=="/loade")cout<<a->load_ex(value);
+        else if(command=="/loadh")cout<<a->load_ch(value);
         else if(command=="/config")cout<<a->config(value);
         else cout<<help_message_1<<help_message_2;
     }
     else if(socket_>=4){
+   
         a->respond_socket("",0,socket_);//start socket
         if(command=="/save")a->respond_socket(a->save(value),1,socket_);
-        else if(command=="/relop")a->respond_socket(a->load_cfg(value),1,socket_);
-        else if(command=="/reloh")a->respond_socket(a->load_cht(value),1,socket_);
+        else if(command=="/loadp")a->respond_socket(a->load_cf( ),1,socket_);
+        else if(command=="/loadh")a->respond_socket(a->load_ch(value),1,socket_);
+        else if(command=="/loade")a->respond_socket(a->load_ex(value),1,socket_);
         else if(command=="/config")a->respond_socket(a->config(value),1,socket_);
         else a->respond_socket(help_message_1,1,socket_);
+       
         a->respond_socket("",-1,socket_);//close socket
     }
     else PRINT_ERROR
@@ -124,11 +130,13 @@ void sagtlib::Agent::terminalsession(bool a){//start a terminal session for chat
 void sagtlib::Agent::handle_input(){
     int socket_=this->input_pool[this->push_out].client_socket;
     int to_send=0;
+  
     if(this->input_pool[this->push_out].message[0] == '/')to_send=handle_command(this,socket_);
     else if(socket_>=4)to_send=1;
     else if(socket_==-1)cout<<"unknown input, please use '/' for Instructions"<<endl;
     else PRINT_ERROR;
     if(to_send==0)return;
+   
     handle_send(this,to_send);
 }
 

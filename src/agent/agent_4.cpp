@@ -17,8 +17,8 @@
     #define SHUTDOWN(sock, how) shutdown(sock, how)
 #endif
 #define PRINT_ERROR std::cout<<"Unexpected Error Occurred : 8";
+#define SEND_IN_ONCE(agent,data,socket) agent->respond_socket("",0,socket);agent->respond_socket(data,1,socket);agent->respond_socket("",-1,socket);
 using json = nlohmann::json;
-
 static void handle_client_in(sagtlib::Agent* agent,int socket){
     char buffer[1024 * 4] = {0};
     size_t body_content_info;
@@ -38,7 +38,7 @@ static void handle_client_in(sagtlib::Agent* agent,int socket){
     }
     
     if (body_content_info == std::string::npos) {// response a GET 
-        agent->respond_socket("",2,socket);
+        SEND_IN_ONCE(agent,"Hi,syagent~\n",socket)
         return;
     }
     {// start to Receive json content
@@ -68,8 +68,8 @@ static void handle_client_in(sagtlib::Agent* agent,int socket){
         }
         agent->push_input(socket,to_send["id"],to_send["message"],to_send["image"]);
     } catch (const std::exception& e) { // client Post a unparsable data
+        SEND_IN_ONCE(agent,e.what(),socket)
         std::cout << "Unexpected error: " << e.what() << "\n";
-        agent->respond_socket(e.what(),2,socket);// response here
     }
 
 }
@@ -108,21 +108,6 @@ void sagtlib::Agent::respond_socket(const std::string& data, int type,int client
                     chunk["end"] = (offset >= data_len) ? 1 : 0;
                     send_chunk(client_fd, chunk.dump());
                 }
-            }
-            break;
-        case 2://one time response
-            {
-                json package={};
-                package["status"]=type;
-                package["message"]=data;
-                
-                std::string body=package.dump();
-                std::string to_send = "HTTP/1.1 200 OK\r\n"
-                      "Content-Type: application/json\r\n"
-                      "Content-Length: " + std::to_string(body.size()) + "\r\n"
-                      "\r\n" + body;
-                ::send(client_fd,to_send.c_str(),to_send.length(),0);
-                CLOSE_SOCKET(client_fd);
             }
             break;
         case -1://end of stream

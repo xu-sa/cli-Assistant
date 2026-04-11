@@ -57,12 +57,13 @@ endif()
 
 add_library(SYagent STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/file/util_parse_file.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/utils/json/utils_json.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils/main/utils_1.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/net/util_net.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/agent/agent_0.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/agent/agent_1.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/agent/agent_2.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/agent/agent_3.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/agent/agent_web.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/agent/agent_4.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/api/interface.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/local_tool/cli_tool.cpp
 )

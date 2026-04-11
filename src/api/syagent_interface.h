@@ -9,13 +9,14 @@
 #define ARRAY_PARAMETER "array"
 #define OBJECT_PARAMETER "object"
 #define NULL_PARAMETER "null"
-
-#define DEFINE_TOOL(Toolname,description,...) const std::string Toolname[][5]={{#Toolname,description,"","",""},__VA_ARGS__};// to define a tool from a Customized function with any discription and parameter definition.
+#define DEFINE_TOOL(Toolname,description,...) std::string Toolname[][5]={{#Toolname,description,"","",""},__VA_ARGS__};// to define a tool from a Customized function with any discription and parameter definition.
 #define REGISTER_TOOL(Agent,Definition,Tool) Agent->register_tool(Definition,sizeof(Definition)/sizeof(Definition[0]),Tool);// register the pre-defined tools in DEFINE_TOOL.
 
 #include <string>
 #include <functional>
+
 namespace sagtlib{
+//    void set_extension_env(const char*);
     class sagent {
     public:
         bool debugger;
@@ -30,15 +31,6 @@ namespace sagtlib{
         static sagent* create(const char* home,const std::string& room); //-home: indicates the workspace path, recommend to use it as the argument from main entrance function. -room: the name of the agent's setting,Memory files and chat history , will create a new one if not exsist within the '-home' 
         static void destroy(sagent*);
     };
-    // class sagent_mannager{
-    // public:
-    //     virtual ~sagent_mannager();
-    //     virtual void add_agent()=0;
-    //     virtual void remove_agent()=0;
-    //     virtual void new_session()=0;
-    //     static sagent_mannager* create();
-    //     static void destroy(sagent_mannager*);
-    // };
 }
 
 #endif

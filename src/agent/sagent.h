@@ -25,10 +25,10 @@ struct inputs_{
 };  
 
 struct SKILL{
-    nlohmann::json definition;
-    std::function<std::string(const std::string*)> Actual_tool;
-    bool state;
-    std::vector<std::string> parameter_format;
+    nlohmann::json definition;//the standard json format definition for LLM function calling
+    std::function<std::string(const std::string*)> Actual_tool;//the cpp function that is Compiled and will be run Directly when tool is been called
+    bool state;//activate the function or not
+    std::vector<std::string> parameter_format;//Unify the parameter format for different skill
 };
 
 struct Model_setup{
@@ -50,17 +50,19 @@ namespace sagtlib{
     class Agent : public sagent
     {
     public:
-        //stage 1
+        //stage 0
         Agent(const std::string &home, const std::string &room);//home/room would be used as workspace Folder,where room is the name of agent instance
         ~Agent();
         void register_tool(const std::string definition_[][5], size_t, std::function<std::string(const std::string *)>) override;
-        nlohmann::json run_tool(size_t, nlohmann::json *);//run tool
-        nlohmann::json get_skills();//get tool discriptions from Assigned tool array
-        void handle_tool_request(nlohmann::json *);//Parse what tool and parameter need to use
+        //void register_tool_(nlohmann::json definition,std::function<std::string(const std::string *)>,SKILL*);
+        nlohmann::json run_tool(SKILL*, nlohmann::json *);//run tool
         std::string send();//send message 
-        std::string load_cfg(const std::string& );//load config from home/room/ , would not reload chat history
+        //stage 1
+        std::string load_cf();//load config from home/room/ , would not reload chat history
+        std::string load_ch(const std::string&);//to load cached chat from workspace
+        std::string load_ex(const std::string&);//to load python skill from extension folder
+        //std::string load_sk(const std::string&);
         std::string save(const std::string &choice);//to save whether config or chat history to home/room/
-        std::string load_cht(const std::string&);//to locd cached chat from workspace
         //stage 2
         void push_input(int socket,const std::string& client_id,const std::string& text,const std::string& image) override;//to add a new message to prepare for handling
         void start_main_thread();//start instance thread
@@ -73,7 +75,7 @@ namespace sagtlib{
         void handle_input();
         std::string attach_file(const std::string&);//to attach a file in the next message
         std::string config(const std::string&);//set config 
-        //Network Socket
+        //stage 4
         void respond_socket(const std::string&,int,int);
         // void respond_socket(const std::string&);
         //void cout_to_web(int socket,const std::string&);
@@ -86,7 +88,8 @@ namespace sagtlib{
         bool on;
         std::deque<nlohmann::json> message_pool;//all the mssages
         int chat_state;
-        
+        std::vector<SKILL> SKILLs;        
+        std::unordered_map<std::string, size_t> SKILL_map;
     private:
         Model_setup profile;//a Structure Containing all the configs of LLM
         //inputs buffer and indications
@@ -97,8 +100,7 @@ namespace sagtlib{
         //server socket number disturbed by kernel 
         int socket_num;
         //to load the built in skills and user customised tools
-        std::vector<SKILL> SKILLs;        
-        std::unordered_map<std::string, size_t> SKILL_map;
+        std::string pyskill_env;
         std::string home;
         std::string room;
         //the Multi thread setting 

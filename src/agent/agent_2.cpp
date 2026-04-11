@@ -3,15 +3,16 @@
 #include <iostream>
 #define PRINT_ERROR std::cout<<"Unexpected Error Occurred : 6";
 using namespace std;
+#define SEND_IN_ONCE(agent,data,socket) agent->respond_socket("",0,socket);agent->respond_socket(data,1,socket);agent->respond_socket("",-1,socket);
 
 void sagtlib::Agent::push_input(int i,const string& client_id,const string& text,const string& image){//input port
     sleep_2(2)
     if(client_id==""){
-        this->respond_socket("Error: Undefined user id",2,i);
+        SEND_IN_ONCE(this,"Error: Unrecognizable user id\n",i)
         return;
     }
     if(this->queued_input==10){
-        if(i!=-1)this->respond_socket("Error: Server is busy",2,i);
+        if(i!=-1){SEND_IN_ONCE(this,"Error: Server is busy\n",i)}
         else cout<<"Cant handle such a huge data stream in once";
         return;
     };
@@ -83,7 +84,7 @@ void sagtlib::Agent::stop_all_thread(){
     this->on=0;
     if (this->main_thread.joinable()){
         this->main_thread.join();
-        std::cout<<"\nagent "<<this->profile.name<<"'s main thread is terminated"<<endl;
+        std::cout<<"agent "<<this->profile.name<<"'s main thread is terminated\n";
     }
     if (this->server_thread.joinable()){
         cout<<this->stop_server_thread("");

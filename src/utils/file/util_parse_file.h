@@ -13,6 +13,7 @@ enum FileCategory {
     BIN,
     CATEGORY_COUNT
 };
+ 
 static const std::string base64_chars = 
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     "abcdefghijklmnopqrstuvwxyz"
