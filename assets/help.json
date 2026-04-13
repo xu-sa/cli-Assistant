@@ -1,12 +1,13 @@
 {
     "name":"help",
-    "description": "Guide you how to use pyskills,All pyskill recevies json string as parameter e.g : {\"p1\":\"1\",\"p2\":\"2\"}",
+    "type":"py",
+    "description": "this is the first DR tool used as a test app,it gives no special outputs",
     "parameters":[
         {
-          "name":"skill_name",
+          "name":"p1",
           "type": "string",
-          "description": "to give out the Definition of one pyskill",
-          "required": "true"
+          "description": "this paramter is a test one, it has no effect on outputs",
+          "required": "false"
         }
     ]
 }
