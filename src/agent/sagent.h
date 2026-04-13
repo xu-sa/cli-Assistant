@@ -26,9 +26,10 @@ struct inputs_{
 
 struct SKILL{
     nlohmann::json definition;//the standard json format definition for LLM function calling
-    std::function<std::string(const std::string*)> Actual_tool;//the cpp function that is Compiled and will be run Directly when tool is been called
-    bool state;//activate the function or not
+    std::function<std::string(const std::string*)> fuc;//the c++ function that is Compiled and will be called Directly when tool is been called
     std::vector<std::string> parameter_format;//Unify the parameter format for different skill
+    std::string type;
+    bool state;//activate the function or not
 };
 
 struct Model_setup{
@@ -44,6 +45,7 @@ struct Model_setup{
     float top_p;//Percentage limitation for the Sum of top Possible output characters
     size_t max_message;//how many meesages will be stored
     std::string tool_choice;//Manage single tool Validity
+    std::string extension_env;
 };
 
 namespace sagtlib{
@@ -54,22 +56,22 @@ namespace sagtlib{
         Agent(const std::string &home, const std::string &room);//home/room would be used as workspace Folder,where room is the name of agent instance
         ~Agent();
         void register_tool(const std::string definition_[][5], size_t, std::function<std::string(const std::string *)>) override;
-        //void register_tool_(nlohmann::json definition,std::function<std::string(const std::string *)>,SKILL*);
+        std::string get_skills(const std::string*);
+        std::string activate_tool(const std::string*);
         nlohmann::json run_tool(SKILL*, nlohmann::json *);//run tool
         std::string send();//send message 
         //stage 1
         std::string load_cf();//load config from home/room/ , would not reload chat history
         std::string load_ch(const std::string&);//to load cached chat from workspace
-        std::string load_ex(const std::string&);//to load python skill from extension folder
-        //std::string load_sk(const std::string&);
+        std::string load_ex();//to load python skill from extension folder
         std::string save(const std::string &choice);//to save whether config or chat history to home/room/
         //stage 2
         void push_input(int socket,const std::string& client_id,const std::string& text,const std::string& image) override;//to add a new message to prepare for handling
+        void listen_input();//loop to check whether to send message
         void start_main_thread();//start instance thread
+        void stop_all_thread();//stop instance thread
         std::string start_server_thread(const std::string& port)override;//start listening to server
         std::string stop_server_thread(const std::string& none)override;
-        void stop_all_thread();//stop instance thread
-        void listen_input();//loop to check whether to send message
         //stage 3
         void terminalsession(bool)override;
         void handle_input();
@@ -77,19 +79,18 @@ namespace sagtlib{
         std::string config(const std::string&);//set config 
         //stage 4
         void respond_socket(const std::string&,int,int);
-        // void respond_socket(const std::string&);
-        //void cout_to_web(int socket,const std::string&);
         void start_server();//start server and bind on a specified port
         void stop_server();//stop server
         void listen_server();//loop to wait and handle port Requests
         inputs_ input_pool[INPUT_POOL_SIZE];
         int push_in;
         int push_out;
-        bool on;
         std::deque<nlohmann::json> message_pool;//all the mssages
         int chat_state;
         std::vector<SKILL> SKILLs;        
         std::unordered_map<std::string, size_t> SKILL_map;
+        //whether the threads should be force to stop to end the whole Process
+        bool on;
     private:
         Model_setup profile;//a Structure Containing all the configs of LLM
         //inputs buffer and indications
@@ -99,15 +100,12 @@ namespace sagtlib{
         int fail_count;
         //server socket number disturbed by kernel 
         int socket_num;
-        //to load the built in skills and user customised tools
-        std::string pyskill_env;
         std::string home;
         std::string room;
         //the Multi thread setting 
         std::mutex input_mutex;  
         std::thread main_thread; 
         std::thread server_thread;
-        //whether the thread function should be force to stop to end the whole Process
     };
 }
 #endif

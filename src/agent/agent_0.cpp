@@ -5,7 +5,8 @@
 #define PRINT_ERROR std::cout<<"Unexpected Error Occurred : 4";
 using json=nlohmann::json;
 using namespace std;
-
+static vector<int> dr_tool_in_use;
+static int tool_size=0;
 static void handle_tool_request(sagtlib::Agent* a,json* agent_reply){
     a->message_pool.push_back({{"role",(*agent_reply)["role"]},{"content",(*agent_reply)["content"]},{"tool_calls",(*agent_reply)["tool_calls"]}});
     json agent_tool_usage=(*agent_reply)["tool_calls"];
@@ -27,17 +28,6 @@ static void handle_tool_request(sagtlib::Agent* a,json* agent_reply){
         if(skill_!=a->SKILL_map.end())to_run=&a->SKILLs[skill_->second];
         a->message_pool.push_back(a->run_tool(to_run,&data));
     }
-};
-
-static json get_skills(sagtlib::Agent* a){
-    json all=json::array();
-    unsigned int skill_number= a->SKILLs.size();
-    for(size_t i=0;i<skill_number;i++){
-        json def;
-        if(a->SKILLs[i].state)def=a->SKILLs[i].definition;
-        if(!def.empty() && !def.is_null())all.push_back(def);
-    };
-    return all;
 };
 
 static json parse_definition(const string definition_[][5],size_t amount,vector<string >* parameter_format){
@@ -80,57 +70,100 @@ static json parse_definition(const string definition_[][5],size_t amount,vector<
     return definition;
 };
 
-void sagtlib::Agent::register_tool(const string definition_[][5],size_t amount, std::function<std::string(const std::string*)> Actual_tool) {
+string sagtlib::Agent::get_skills(const string* a){
+    json all=json::array();
+    unsigned int skill_number= this->SKILLs.size();
+    if(!a){
+        for(size_t i=0;i<skill_number;i++){
+            json def;
+            if(this->SKILLs[i].state)def=this->SKILLs[i].definition;
+            if(!def.empty() && !def.is_null())all.push_back(def);
+        };
+    }else{
+        for(size_t i=0;i<skill_number;i++){
+            json def;
+            if(!this->SKILLs[i].state){
+                def["tag"]=i;
+                def["definition"]=this->SKILLs[i].definition["function"]["description"];
+                def["name"]=this->SKILLs[i].definition["function"]["name"];
+                all.push_back(def);
+            }
+        };
+    }
+    return all.dump();
+};
+
+string sagtlib::Agent::activate_tool(const string* a){
+    int tag=0;
+    try{
+        tag=stoi(a[0]);
+        if(tag<=2&&tag>=tool_size)return "Please use a valid number";
+        this->SKILLs[tag].state=1;
+        dr_tool_in_use.push_back(tag);
+        return "registered DR tool "+this->SKILLs[tag].definition["function"]["name"].dump()+" by tag "+a[0];
+    }catch(exception& e){
+        return "error: "+string(e.what());
+    }
+}
+
+void sagtlib::Agent::register_tool(const string definition_[][5],size_t amount, std::function<std::string(const std::string*)> fuc) {
     SKILL new_skill;
     json definition = parse_definition(definition_,amount,&new_skill.parameter_format);
     if(definition["type"]=="Wrong")return;
     auto skill_= this->SKILL_map.find(definition["function"]["name"]);
     if(skill_!=this->SKILL_map.end()){
         this->SKILLs[skill_->second].definition=definition;
-        this->SKILLs[skill_->second].Actual_tool=Actual_tool;
+        this->SKILLs[skill_->second].fuc=fuc;
         cout<<"updated skill "<<definition["function"]["name"]<<"\n";
         return;
     }
     new_skill.definition=definition;
-    new_skill.Actual_tool = Actual_tool;
-    new_skill.state=true;
+    new_skill.fuc = fuc;
+    new_skill.state=definition_[0][2]=="";
+    new_skill.type=definition_[0][2];
     this->SKILLs.push_back(new_skill);
-    this->SKILL_map[definition["function"]["name"]]=this->SKILLs.size()-1;
-    cout<<"add skill "<<definition["function"]["name"]<<"\n";
+    this->SKILL_map[definition["function"]["name"]]=tool_size;
+    cout<<"Registered tool "<<tool_size<<": "<<definition["function"]["name"]<<" "<<(new_skill.state?"+":"-")<<"\n";
+    tool_size++;
     return;
 }
 
 json sagtlib::Agent::run_tool(SKILL* s,json* data){
     if(!s)return {{"role","tool"},{"content","This tool is not registered/no such tool"},{"tool_call_id",(*data)["id"]}};
     if(this->debugger)cout<<"\nDEBUGGER: Handling Tool Request Data : "<<(*data).dump()<<endl;
-    if(this->working_count==6)return{{"role","tool"},{"content","You Have Been Continually Request for Tool for too many times,report to user the situation and ask for next move Instantly"},{"tool_call_id",(*data)["id"]}};
+    if(this->working_count==6)return{{"role","tool"},{"content","You Have Been Continually Request tool for too many times,Please mention the situation to user and ask for next move"},{"tool_call_id",(*data)["id"]}};
     if(this->fail_count>=4)return{{"role","tool"},{"content","Tool keeps Failing , you may choose to report to user and ask for next step"},{"tool_call_id",(*data)["id"]}};      
     if(!s->state) return {{"role","tool"},{"content","The Tool is temporarily Disabled"},{"tool_call_id",(*data)["id"]}};
     json result;
     result["role"]="tool";
     result["tool_call_id"]=(*data)["id"];
     try{
-        size_t pnum=s->parameter_format.size(); 
-        string data_[pnum];
-        for(size_t i=0;i<pnum;i++)data_[i]=(
-            (*data)["arguments"][s->parameter_format[i]].is_null()?"":
-            (*data)["arguments"][s->parameter_format[i]].get<std::string>()
-        );
+        string data_[5];        
+        if(s->type==""){//not a extension skill,has tag within [0,2]
+            for(size_t i=0;i<s->parameter_format.size();i++)data_[i]=(
+                (*data)["arguments"][s->parameter_format[i]].is_null()?"":
+                ((*data)["arguments"][s->parameter_format[i]].is_string()?
+                (*data)["arguments"][s->parameter_format[i]].get<std::string>():
+                (*data)["arguments"][s->parameter_format[i]].dump()
+            ));
+        }else{
+            data_[0]=s->type;
+            data_[1]=(*data)["name"];
+            data_[2]=(*data)["arguments"].dump();
+            data_[3]=this->profile.extension_env;
+        }
         if(this->debugger){
-            cout<<"\nDEBUGGER: using tool : "<<s->definition["function"]["name"]<<"\nParameters : ";
+            cout<<"\nDEBUGGER: using tool : "<<(*data)["name"]<<"\nParameters : ";
             for (const auto& str : data_) {
                 std::cout << str << "; ";
             };
         }
-        {//get result from tool and build the json
-            result["content"]=s->Actual_tool(data_);
-        }
+        result["content"]=s->fuc(data_);
         this->working_count+=1;
         this->fail_count=0;
     }
     catch(const std::exception& e){
-        string res = std::string(e.what());
-        result["content"]=res;
+        result["content"]=std::string(e.what());
         this->working_count=0;
         this->fail_count+=1;
     };
@@ -147,13 +180,14 @@ string sagtlib::Agent::send(){
         while(this->message_pool.size()>=2&&this->message_pool[1]["role"]=="tool")this->message_pool.erase(this->message_pool.begin()+1);
     };
     {//to build the request body
+        json all = json::parse(this->get_skills(NULL));
         request_body["model"]=(this->profile.local_llm_socket!=-1?"local llm":(urls[this->profile.provider][1]=="OpenRoute"?models_open_router[this->profile.openroute_model]:models[this->profile.provider][this->profile.model]));
         request_body["messages"]=this->message_pool;
         request_body["temperature"]=this->profile.temperature;  
         request_body["top_p"]=this->profile.top_p;
         request_body["max_tokens"]=this->profile.max_tokens;
         request_body["stream"]=this->profile.stream;
-        request_body["tools"] = get_skills(this);
+        request_body["tools"] = all;
         request_body["tool_choice"] =this->profile.tool_choice;
     }
     if(this->input_pool[this->push_out].image!=""){//if there is a image base64 string in the message
@@ -182,21 +216,27 @@ string sagtlib::Agent::send(){
             }
         }
         message_reply=this->profile.name+" : "+reply_context;
-        if (agent_reply.contains("tool_calls")){//if there is tool usage
+        if (agent_reply.contains("tool_calls")){//tool is called
             this->chat_state=2;
             handle_tool_request(this,&agent_reply);
             return (reply_context.empty()?("(calling tool)"+this->profile.name+" : "+".."):"(calling tool)"+message_reply);
         }else this->message_pool.push_back({{"role",agent_reply["role"]},{"content",agent_reply["content"]}});//if no tool,then reply and end this session
     }
-    
     else{//if http Response is not Succeed
         this->message_pool.push_back({{"role","assistant"},{"content","ummm..."}});//this Prevents broken message Sequence
         return "LLM error: "+to_string(agent_reply["code_"])+" #type:"+to_string(agent_reply["error_type"])+" #message:"+to_string(agent_reply["error_message"]);
     }
-    
     this->working_count=0;
     this->fail_count=0;
     this->chat_state=1;
+    if(dr_tool_in_use.size()>0){
+        for(int i:dr_tool_in_use){
+            this->SKILLs[i].state=0;
+        }
+        // for(int i=3;i<tool_size;i++){
+        // }
+        dr_tool_in_use.clear();
+    }
     return (message_reply.empty()?(this->profile.name+" : "+".."):message_reply);
 }
 
@@ -204,15 +244,14 @@ sagtlib::Agent::Agent(const string& home,const string& room):home(home),room(roo
     {//preconfig
         this->port_num=-1;
         this->socket_num=-1;//will be distributed by system kernel 
-        this->start_main_thread();
         for (int i = 0; i < INPUT_POOL_SIZE; ++i)this->input_pool[i] = inputs_{.message="",.image="",.client_socket=0}; 
         this->push_in=0;
         this->push_out=0;
         this->queued_input=0;
     }
     cout<<this->load_cf();
-    if(this->pyskill_env.empty())return;
-    cout<<this->load_ex(this->pyskill_env);
+    // cout<<this->load_ex();
+    this->start_main_thread();
 }
 
 sagtlib::Agent::~Agent(){

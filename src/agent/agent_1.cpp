@@ -9,41 +9,6 @@ using namespace std;
 using json=nlohmann::json;
 namespace fs = std::filesystem;
 
-static string check_extension_system(const std::string& path) {
-    std::string res="";
-    try {
-        for (const auto& entry : fs::directory_iterator(path)) {
-            if (entry.is_directory()) {
-                std::string folderName = entry.path().filename().string();
-                bool hasPy = false;
-                bool hasMd = false;
-                for (const auto& fileEntry : fs::directory_iterator(entry.path())) {
-                    if (fileEntry.is_regular_file()) {
-                        std::string filename = fileEntry.path().filename().string();
-                        std::string stem = fileEntry.path().stem().string();
-                        
-                        if (stem == folderName) {
-                            if (fileEntry.path().extension() == ".py") hasPy = true;
-                            if (fileEntry.path().extension() == ".json") hasMd = true;
-                        }
-                    }
-                }
-                
-                res+=(hasPy&&hasMd?folderName+" ":"");
-            }
-        }
-        //std::cout<<"Loading skills: "<<res<<"\n";
-    } catch (const fs::filesystem_error& e) {
-        std::cerr << "Error accessing path: " << e.what() << std::endl;
-    }
-    size_t sz=res.length();
-    if(sz>=200){
-        std::cerr<<"Error : too many skills,Aborting skill Registration..Please check your extension folder\n";
-        res="help ";
-    }
-    return res;
-}
-
 static json handle_read_json(const string& filename){
     json data={};
     fs::path p = filename;
@@ -52,10 +17,10 @@ static json handle_read_json(const string& filename){
     std::ifstream file(p.string());
     try{
         data = json::parse(file);
-        cout<<"System : Reading file "<<filename<<"\n";
+        cout<<"Reading file "<<filename<<"\n";
     }
     catch(const json::parse_error& e){
-        cout<<"Failed to read file "+filename+"\n";
+        cout<<"Error: Failed to read file "+filename+"\n";
         data={};
     }
     file.close();
@@ -97,28 +62,88 @@ static string handle_save(json* save,const string& home,const string& room,const
     return "Failed saving to "+home+"/"+room+"/"+filename+"\n";
 }
 
-string sagtlib::Agent::load_ex(const string& extension_h){
-    if(!extension_h.empty()){
-        extension_home=extension_h;
-        std::cout<<"extension home changed to "<<extension_h<<"\n";
-    };
-    string f=check_extension_system(extension_home);
-    this->pyskill_env=extension_home;
-    DEFINE_TOOL(
-        pyskill,
-        "Unified Standard entry for Multiple python skills",
-        {"1", "script_name", "string", "The python skill name", f},
-        {"1", "json_body", "string", "JSON formatted arguments,Varies from skill you selected,use '{}' for hint", ""}
-    )
-    REGISTER_TOOL(this,pyskill,skill_2);
-    return "reloaded python extension: "+f+"\n";
+string sagtlib::Agent::load_ex() {
+    string res="Skill load from extension folder: ";
+    try {
+        fs::path p =this->profile.extension_env;
+        for (const auto& entry : fs::directory_iterator(p)){
+            if (entry.is_directory()) {
+                std::string folderName = entry.path().filename().string();
+                if(folderName=="venv")continue;
+                bool hasPy,hasJson,hasBin,hasSh= false;
+                for (const auto& fileEntry : fs::directory_iterator(entry.path())) {
+                    if (fileEntry.is_regular_file()) {
+                        std::string filename = fileEntry.path().filename().string();
+                        std::string stem = fileEntry.path().stem().string();
+                        std::string ext = fileEntry.path().extension().string();
+                        if (stem == folderName) {
+                            if (ext == ".py") hasPy = true;
+                            if (ext == ".sh") hasSh = true;
+                            if (ext == ".json") hasJson = true;
+                            if (ext == "") hasBin = true;
+                        }
+                    }
+                }
+                if (hasJson) {
+                    try{
+                        json jsonData = handle_read_json(build_path(entry.path().string(),folderName) + ".json");
+                        if(
+                            !jsonData.contains("name")||
+                            jsonData["name"]!=folderName
+                        ){
+                            std::cout<<"Error: tool must have the same name as it's folder in the definition\n";
+                            continue;
+                        }
+                        if(
+                            !(
+                                jsonData.contains("type")&&
+                                jsonData["type"].is_string()&&
+                                (
+                                    (jsonData["type"]=="bin"&&hasBin)||
+                                    (jsonData["type"]=="py"&&hasPy)||
+                                    (jsonData["type"]=="sh"&&hasSh)
+                                )
+                            )
+                        ){
+                            std::cout<<"Error: skill type is rather undefined ,Mismatched or incorrect\n";
+                            continue;
+                        }
+                        vector<array<string,5>> def;
+
+                        def.push_back({jsonData["name"],jsonData["description"],jsonData["type"],"",""});
+                        for(auto &i:jsonData["parameters"]){
+                            string enums="";
+                            if(i["enum"].is_array())for(const auto& ii:i["enum"])enums+=ii.get<std::string>()+" ";
+                            def.push_back({i["required"],i["name"],i["type"],i["description"],enums});
+                        }
+                        std::string c_array[def.size()][5];
+                        for (size_t i = 0; i < def.size(); ++i) {
+                            for (size_t j = 0; j < 5; ++j) {
+                                c_array[i][j] = def[i][j];
+                            }
+                        }
+                        REGISTER_TOOL(this,c_array,skill_2);
+                        res+=folderName+" ";
+                    }
+                    catch(exception& e){
+                        std::cout<<"Error Occurred when registering tool '"<<folderName<<"' : "<<e.what()<<"\n";
+                    } 
+                }
+
+            }
+        }
+        return res+"\n";
+    } catch (const fs::filesystem_error& e) {
+        return "Error accessing extension Folder(you may need to Configure the extension path): " + string(e.what())+"\n";
+    }
+   
 }
 
 string sagtlib::Agent::load_cf(){
     {//the Model setup
         json data=handle_read_json(build_path(build_path(this->home,this->room),"profile.json"));//build the home/room/profile.json path and read file
         this->profile.api = (data.contains("APIKEY")?data["APIKEY"]:"");
-        this->pyskill_env=(data.contains("pyskill")?data["pyskill"]:"");
+        this->profile.extension_env=(data.contains("extension")?data["extension"]:"");
         this->profile.name = this->room;
         this->profile.tool_choice = (data.contains("tool_choice")?data["tool_choice"]:"auto");
         //this->profile.whoyouare = (data.contains("whoyouare")?data["whoyouare"]:"you are a helpful AI Assistant");
@@ -212,7 +237,7 @@ string sagtlib::Agent::save(const string& choice){
         save["max_history"]=this->profile.max_message;
         save["tool_choice"]=this->profile.tool_choice;
         save["local_socket"]=this->profile.local_llm_socket;
-        save["pyskill"]=this->pyskill_env;
+        save["extension"]=this->profile.extension_env;
         return handle_save(&save,this->home,this->room,"profile.json");
     }else return "no such option\n";
 }

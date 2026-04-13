@@ -11,7 +11,7 @@ const char* help_message_1="\
 No Such Command,Available:\n\
     /loadp                    --load profile for this agent\n\
     /loadh <int>              --load chat for this agent\n\
-    /loade <path>             --load Extend python skills\n\
+    /loade                    --load extension skills\n\
     /save 'h'/'p'             --choose to save history(h) or agent profile(p)\n\
     /config <int>             --to alter configuration\n\
     /file <path>              --to add a file\n";
@@ -34,16 +34,15 @@ static string help_open_route_model(){
     return I;
 }
 
-static string help_model(int i ){
+static string help_model(int i){
     string I;
     if(urls[i][1]=="Local LLM")return "Local LLM model is not defined here, it depends on your setup\n";
-    if(urls[i][1]=="OpenRouter")return "Open Route provides models that can be viewed via /config 5\n";
-    for(int i=0;i<5;i++)if(!models[i][i].empty())I+="    "+to_string(i)+". "+models[i][i]+"\n";
+    if(urls[i][1]=="OpenRouter")return "Open Route provides models that can be viewed from /config 4 \n";
+    for(int ii=0;ii<5;ii++)if(!models[i][ii].empty())I+="    "+to_string(ii)+". "+models[i][ii]+"\n";
     return I;
 }
 
 static int handle_command(sagtlib::Agent* a,int socket_){
- 
     string command ,value;
     {
         istringstream ss(a->input_pool[a->push_out].message);
@@ -69,25 +68,23 @@ static int handle_command(sagtlib::Agent* a,int socket_){
         else if(command=="/serveroff")cout<<a->stop_server_thread(value);//only for terminal
         else if(command=="/save")cout<<a->save(value);
         else if(command=="/loadp")cout<<a->load_cf();
-        else if(command=="/loade")cout<<a->load_ex(value);
+        else if(command=="/loade")cout<<a->load_ex( );
         else if(command=="/loadh")cout<<a->load_ch(value);
         else if(command=="/config")cout<<a->config(value);
         else cout<<help_message_1<<help_message_2;
     }
     else if(socket_>=4){
-   
         a->respond_socket("",0,socket_);//start socket
         if(command=="/save")a->respond_socket(a->save(value),1,socket_);
         else if(command=="/loadp")a->respond_socket(a->load_cf( ),1,socket_);
         else if(command=="/loadh")a->respond_socket(a->load_ch(value),1,socket_);
-        else if(command=="/loade")a->respond_socket(a->load_ex(value),1,socket_);
+        else if(command=="/loade")a->respond_socket(a->load_ex( ),1,socket_);
         else if(command=="/config")a->respond_socket(a->config(value),1,socket_);
         else a->respond_socket(help_message_1,1,socket_);
        
         a->respond_socket("",-1,socket_);//close socket
     }
     else PRINT_ERROR
- 
     return 0;
 
 }
@@ -130,7 +127,7 @@ void sagtlib::Agent::terminalsession(bool a){//start a terminal session for chat
 void sagtlib::Agent::handle_input(){
     int socket_=this->input_pool[this->push_out].client_socket;
     int to_send=0;
-  
+    
     if(this->input_pool[this->push_out].message[0] == '/')to_send=handle_command(this,socket_);
     else if(socket_>=4)to_send=1;
     else if(socket_==-1)cout<<"unknown input, please use '/' for Instructions"<<endl;
@@ -217,26 +214,30 @@ string sagtlib::Agent::config(const string& option){
             I+="\nCurrent open route model: "+to_string(this->profile.openroute_model)+"\n";
             break;
         case 5:
+            this->profile.extension_env=(value.empty()?this->profile.extension_env:value);
+            I="\nCurrent Extention path: "+this->profile.extension_env+"\n";
+            break;
+        case 6:
             this->profile.max_tokens=(value_int>5000||value_int<400?this->profile.max_tokens:value_int);
             I="\nCurrent max tokens: "+to_string(this->profile.max_tokens)+"\n";
             break;
-        case 6:
+        case 7:
             this->profile.stream=(value=="true"||value=="1");
             I="\nCurrent stream: "+to_string(this->profile.stream)+"\n";
             break;
-        case 7:
+        case 8:
             this->profile.temperature=(value_float==-24.0f||value_float>2?this->profile.temperature:value_float);
             I="\nCurrent temprature: "+to_string(this->profile.temperature)+"\n";
             break;
-        case 8:
+        case 9:
             this->profile.top_p=(value_float==-24.0f||value_float>2?this->profile.top_p:value_float);
             I="\nCurrent top p: "+to_string(this->profile.top_p)+"\n";
             break;
-        case 9:
+        case 10:
             this->profile.max_message=(value_int>150||value_int<10?this->profile.max_message:value_int);
             I="\nCurrent max messages: "+to_string(this->profile.max_message)+"\n";
             break;
-        case 10:
+        case 11:
             this->profile.tool_choice=(value=="none"||value=="auto"||value=="required"?value:this->profile.tool_choice);
             I="\nCurrent tool choice: "+this->profile.tool_choice+"\n";
             break;
@@ -247,13 +248,14 @@ string sagtlib::Agent::config(const string& option){
             I+="  1 <string>                   --Set API key \n";
             I+="  2 <int>                      --Set LLM provider        (leave [value] empty to get hint)      Current: "+to_string(this->profile.provider)+"\n";
             I+="  3 <int>                      --Set LLM model           (leave [value] empty to get hint)      Current: "+to_string(this->profile.model)+"\n";
-            I+="  4 <int>                      --Set LLM open route model(leave [value] empty to get hint)      Current: "+to_string(this->profile.openroute_model)+"\n";
-            I+="  5 <int>                      --Set max tokens          Current: "+to_string(this->profile.max_tokens)+"\n";
-            I+="  6 '0'/'1'                    --Set stream              Current: "+to_string(this->profile.stream)+"\n";
-            I+="  7 <float>                    --Set temperature         Current: "+to_string(this->profile.temperature)+"\n";
-            I+="  8 <float>                    --Set top_p               Current: "+to_string(this->profile.top_p)+"\n";
-            I+="  9 <int>                      --Set max messages        Current: "+to_string(this->profile.max_message)+"\n";
-            I+=" 10 'none'/'auto'/'required'   --Set tool choice         Current: "+this->profile.tool_choice+"\n";
+            I+="  4 <int>                      --Set OpenRouter LLM      (leave [value] empty to get hint)      Current: "+to_string(this->profile.openroute_model)+"\n";
+            I+="  5 <path>                     --Set Extension system path                                      Current: "+this->profile.extension_env+"\n";
+            I+="  6 <int>                      --Set max tokens          Current: "+to_string(this->profile.max_tokens)+"\n";
+            I+="  7 '0'/'1'                    --Set stream              Current: "+to_string(this->profile.stream)+"\n";
+            I+="  8 <float>                    --Set temperature         Current: "+to_string(this->profile.temperature)+"\n";
+            I+="  9 <float>                    --Set top_p               Current: "+to_string(this->profile.top_p)+"\n";
+            I+=" 10 <int>                      --Set max messages        Current: "+to_string(this->profile.max_message)+"\n";
+            I+=" 11 'none'/'auto'/'required'   --Set tool choice         Current: "+this->profile.tool_choice+"\n";
             break;
     }
     return I;
