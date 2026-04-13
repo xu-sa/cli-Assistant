@@ -13,7 +13,9 @@
 #define MAX_TOOL_OUTPUT 1024*3
 static char buffer[1024]={0};
 using namespace std;
-
+ 
+#define P(x,y) build_path(x,y)
+ 
 string skill_1(const string* data) {//1
     string result = "";
     string cmd = data[0];
@@ -38,10 +40,16 @@ string skill_1(const string* data) {//1
     return result.empty() ? "Command executed with no output" : result;
 };
 
-string skill_2(const string* data) {//2
-    string python_path=build_path(build_path(build_path(extension_home,"venv"),"bin"),"python3 ");
-    string cmd=python_path+\
-        build_path(build_path(extension_home,data[0]),data[0]+".py ")+\
-        "'"+data[1]+"'"+" 2>&1";
+string skill_2(const string* data) {
+    // data[0]: bin,py,sh
+    // data[1]: skill name
+    // data[2]: skill json parameter
+    // data[3]: folder
+    string filepath= P(P(data[3],data[1]),data[1]);
+    string cmd;
+    if (data[0] == "py")cmd =P(P(P(data[3],"venv"),"bin"),"python3 ") + filepath + ".py '" + data[2] + "'";
+    else if (data[0] == "sh")cmd = "bash " +filepath+ ".sh '" + data[2] + "'";
+    else if (data[0] == "bin")cmd = "./"+filepath + " '" + data[2] + "'";
+    else return "Error code: 10";
     return skill_1(&cmd);
 }
