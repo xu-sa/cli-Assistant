@@ -121,6 +121,7 @@ setup_workspace(){
     echo "Workspace created at: $HOME/.slcache"
     mkdir -p "$EXTENSION_DIR"
     python3 -m venv "$EXTENSION_DIR/venv"
+    "$EXTENSION_DIR/venv/bin/pip" install requests
     mkdir -p "$EXTENSION_DIR/help"
     source "$EXTENSION_DIR/venv/bin/activate"
     pip install --upgrade pip
