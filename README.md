@@ -4,13 +4,13 @@ a ai tool Designed to help Improve Efficiency working on command line Interface
 # Main Feature:
 0:purely done in C++, Support windows and linux, nearly none cpu costs, totally 3Mb memory cost on Average
 
-1:extension system Available , create a c++ function , and tell your AI agent to run it. 
+1:extension system Available , create a c++ function or a External script , and Register as a tool. 
 
 2:work as both Server and client application
 
 3:send Multiple types of file via termial 
 
-# Prerequisite: nlohmann::json & curl
+# Prerequisite: nlohmann::json & curl (all Available in the lib-l/lib-w folder)
 
 # build on linux
 clone Repository
