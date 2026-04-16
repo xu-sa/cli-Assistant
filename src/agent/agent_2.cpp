@@ -8,12 +8,12 @@ using namespace std;
 void sagtlib::Agent::push_input(int i,const string& client_id,const string& text,const string& image){//input port
     sleep_2(2)
     if(client_id==""){
-        SEND_IN_ONCE(this,"Error: Unrecognizable user id\n",i)
+        SEND_IN_ONCE(this,MES_2_0,i)
         return;
     }
     if(this->queued_input==10){
-        if(i!=-1){SEND_IN_ONCE(this,"Error: Server is busy\n",i)}
-        else cout<<"Cant handle such a huge data stream in once";
+        if(i!=-1){SEND_IN_ONCE(this,MES_2_1,i)}
+        else MES_2_0;
         return;
     };
     this->input_pool[this->push_in].client_id=client_id;
@@ -44,12 +44,12 @@ void sagtlib::Agent::start_main_thread(){
     this->stop_all_thread();sleep_2(3)
     this->on=true;
     this->main_thread=thread(&sagtlib::Agent::listen_input,this);
-    cout<<"main thread is on\n";
+    MES_2_3
 }
  
 string sagtlib::Agent::start_server_thread(const string& input_port){
     if(this->socket_num!=-1){
-        return "please close current server socket before listening on another socket\n";
+        return MES_2_4
     }
     int port;
     try{
@@ -59,15 +59,15 @@ string sagtlib::Agent::start_server_thread(const string& input_port){
     }
     this->port_num=port;
     if(this->port_num==-1){
-        return "not a correct port number\n";
+        return MES_2_5
     }else
     if(this->on){
         this->start_server();
         if(this->socket_num==-1)return "";
         this->server_thread=thread(&sagtlib::Agent::listen_server,this);
-        return "server thread start on port "+to_string(this->port_num)+"\n";
+        return MES_2_6
     }
-    else return "main thread is not been Activated yet..cant start server now.\n";
+    else return MES_2_7
     
 } 
 
@@ -75,19 +75,19 @@ string sagtlib::Agent::stop_server_thread(const string& a){
     if(this->server_thread.joinable()){
         this->stop_server();
         this->server_thread.join();
-        return "server thread shut down..\n";
+        return MES_2_8
     }
-    else return "server is not been Activated yet..cant join a unjoinable thread\n";
+    else return MES_2_9
 }
 
 void sagtlib::Agent::stop_all_thread(){
     this->on=0;
     if (this->main_thread.joinable()){
         this->main_thread.join();
-        std::cout<<"agent "<<this->profile.name<<"'s main thread is terminated\n";
+        MES_2_10
     }
     if (this->server_thread.joinable()){
-        cout<<this->stop_server_thread("");
+        std::cout<<this->stop_server_thread("");
     }
     sleep_2(3)
 }

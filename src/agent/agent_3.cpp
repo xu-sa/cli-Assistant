@@ -4,7 +4,9 @@
 #include "../utils/file/util_parse_file.h"
 #include <iostream>
 #define PRINT_ERROR std::cout<<"Unexpected Error Occurred : 7";
-#define PRINT_TEST(x) std::cout<<"debugger "<<x<<"\n";
+#ifndef Current
+#define Current string(COLOR_BLUE)+"Current"+string(COLOR_RESET)
+#endif 
 using json=nlohmann::json;
 using namespace std; //   /loads <path>             --load skill from select folder\n
 const char* help_message_1="\
@@ -13,8 +15,7 @@ No Such Command,Available:\n\
     /loadh <int>              --load chat for this agent\n\
     /loade                    --load extension skills\n\
     /save 'h'/'p'             --choose to save history(h) or agent profile(p)\n\
-    /config <int>             --to alter configuration\n\
-    /file <path>              --to add a file\n";
+    /config <int>             --to alter configuration\n";
 const char* help_message_2="\
 Commands below are only Available for this termial:\n\
     /exit                     --terminate this session and this agent\n\
@@ -91,10 +92,10 @@ static int handle_command(sagtlib::Agent* a,int socket_){
 
 static void handle_send(sagtlib::Agent* a,int to_send){
     if(a->input_pool[a->push_out].image[0]=='d'){//there is a image attached 
-            json content=json::array();
-            content.push_back({{"type","text"},{"text",a->input_pool[a->push_out].client_id+": "+a->input_pool[a->push_out].message}});
-            content.push_back({{"type", "image_url"},{ "image_url",{{"url",a->input_pool[a->push_out].image}}}});//data:image/png;base64,iVBO.....
-            a->message_pool.push_back({{"role","user"},{"content",content}});
+        json content=json::array();
+        content.push_back({{"type","text"},{"text",a->input_pool[a->push_out].client_id+": "+a->input_pool[a->push_out].message}});
+        content.push_back({{"type", "image_url"},{ "image_url",{{"url",a->input_pool[a->push_out].image}}}});//data:image/png;base64,iVBO.....
+        a->message_pool.push_back({{"role","user"},{"content",content}});
     }
     else a->message_pool.push_back({{"role","user"},{"content",a->input_pool[a->push_out].client_id+": "+a->input_pool[a->push_out].message}});
     if(to_send==1){//send to socket
@@ -154,15 +155,6 @@ string sagtlib::Agent::attach_file(const std::string& path){
         else if(this->input_pool[this->push_out].image[0]=='2')return "image file detected but doesn't seem to be in good Format\n";
         else PRINT_ERROR
         this->input_pool[this->push_out].image.clear();
-    case DOCUMENT:
-        this->input_pool[this->push_out].message+=decode_txt(path);
-        return "add a text '"+path+"' \n";
-    case AUDIO:
-        this->input_pool[this->push_out].message+=decode_audio(path);
-        return "add a audio '"+path+"' \n";
-    case VIDEO:
-        this->input_pool[this->push_out].message+=decode_video(path);
-        return "add a video '"+path+"' \n";
     default:
         return "Unexpected file type\n";
     }    
@@ -191,71 +183,71 @@ string sagtlib::Agent::config(const string& option){
     switch(choice){
         case 0:
             this->profile.local_llm_socket=(value_int>0?value_int:-1);
-            I="\nCurrent Local LLM socket: "+(value_int>0?"127.0.0.1:"+to_string(value_int):"None")+"\n";
+            I="\n"+Current+" Local LLM socket: "+(value_int>0?"127.0.0.1:"+to_string(value_int):"None")+"\n";
             break;
         case 1:
             this->profile.api=(value.empty()?this->profile.api:value);
-            I="\nCurrent api: "+this->profile.api+"\n";
+            I="\n"+Current+" api: "+this->profile.api+"\n";
             break;
         case 2:
             this->profile.provider= (value_int>=0&&value_int<PROVIDER_SIZE?value_int:this->profile.provider);
             I=help_provider();
             this->profile.model=0;
-            I+="\nCurrent provider: "+to_string(this->profile.provider)+"\n";
+            I+="\n"+Current+" provider: "+to_string(this->profile.provider)+"\n";
             break;
         case 3:
             this->profile.model=(value_int>=0&&value_int<MODEL_OPTION?value_int:this->profile.model);
             I=help_model(this->profile.provider);
-            I+="\nCurrent model: "+to_string(this->profile.model)+"\n";
+            I+="\n"+Current+" model: "+to_string(this->profile.model)+"\n";
             break;
         case 4:
             this->profile.openroute_model=(value_int>=0&&value_int<OPEN_ROUTE_SIZE?value_int:this->profile.openroute_model);
             I=help_open_route_model();
-            I+="\nCurrent open route model: "+to_string(this->profile.openroute_model)+"\n";
+            I+="\n"+Current+" open route model: "+to_string(this->profile.openroute_model)+"\n";
             break;
         case 5:
             this->profile.extension_env=(value.empty()?this->profile.extension_env:value);
-            I="\nCurrent Extention path: "+this->profile.extension_env+"\n";
+            I="\n"+Current+" Extention path: "+this->profile.extension_env+"\n";
             break;
         case 6:
             this->profile.max_tokens=(value_int>5000||value_int<400?this->profile.max_tokens:value_int);
-            I="\nCurrent max tokens: "+to_string(this->profile.max_tokens)+"\n";
+            I="\n"+Current+" max tokens: "+to_string(this->profile.max_tokens)+"\n";
             break;
         case 7:
             this->profile.stream=(value=="true"||value=="1");
-            I="\nCurrent stream: "+to_string(this->profile.stream)+"\n";
+            I="\n"+Current+" stream: "+to_string(this->profile.stream)+"\n";
             break;
         case 8:
             this->profile.temperature=(value_float==-24.0f||value_float>2?this->profile.temperature:value_float);
-            I="\nCurrent temprature: "+to_string(this->profile.temperature)+"\n";
+            I="\n"+Current+" temprature: "+to_string(this->profile.temperature)+"\n";
             break;
         case 9:
             this->profile.top_p=(value_float==-24.0f||value_float>2?this->profile.top_p:value_float);
-            I="\nCurrent top p: "+to_string(this->profile.top_p)+"\n";
+            I="\n"+Current+" top p: "+to_string(this->profile.top_p)+"\n";
             break;
         case 10:
             this->profile.max_message=(value_int>150||value_int<10?this->profile.max_message:value_int);
-            I="\nCurrent max messages: "+to_string(this->profile.max_message)+"\n";
+            I="\n"+Current+" max messages: "+to_string(this->profile.max_message)+"\n";
             break;
         case 11:
             this->profile.tool_choice=(value=="none"||value=="auto"||value=="required"?value:this->profile.tool_choice);
-            I="\nCurrent tool choice: "+this->profile.tool_choice+"\n";
+            I="\n"+Current+" tool choice: "+this->profile.tool_choice+"\n";
             break;
         default:
-            I= "Configuration: No Such Option\n";
-            I+="Usage:/config [option] [value]\n";
-            I+="  0 <int>                      --Set local LLM Socket (this overrides model/provider config)    Current: "+(this->profile.local_llm_socket==-1?"None":to_string(this->profile.local_llm_socket))+"\n";
+            I= string(COLOR_YELLOW)+"Configuration: No Such Option"+string(COLOR_RESET);
+            I+="\nUsage:/config [option] [value]\n";
+            I+="  0 <int>                      --Set local LLM Socket (this overrides model/provider config)    "+Current+": "+(this->profile.local_llm_socket==-1?"None":to_string(this->profile.local_llm_socket))+"\n";
             I+="  1 <string>                   --Set API key \n";
-            I+="  2 <int>                      --Set LLM provider        (leave [value] empty to get hint)      Current: "+to_string(this->profile.provider)+"\n";
-            I+="  3 <int>                      --Set LLM model           (leave [value] empty to get hint)      Current: "+to_string(this->profile.model)+"\n";
-            I+="  4 <int>                      --Set OpenRouter LLM      (leave [value] empty to get hint)      Current: "+to_string(this->profile.openroute_model)+"\n";
-            I+="  5 <path>                     --Set Extension system path                                      Current: "+this->profile.extension_env+"\n";
-            I+="  6 <int>                      --Set max tokens          Current: "+to_string(this->profile.max_tokens)+"\n";
-            I+="  7 '0'/'1'                    --Set stream              Current: "+to_string(this->profile.stream)+"\n";
-            I+="  8 <float>                    --Set temperature         Current: "+to_string(this->profile.temperature)+"\n";
-            I+="  9 <float>                    --Set top_p               Current: "+to_string(this->profile.top_p)+"\n";
-            I+=" 10 <int>                      --Set max messages        Current: "+to_string(this->profile.max_message)+"\n";
-            I+=" 11 'none'/'auto'/'required'   --Set tool choice         Current: "+this->profile.tool_choice+"\n";
+            I+="  2 <int>                      --Set LLM provider        (leave [value] empty to get hint)      "+Current+": "+to_string(this->profile.provider)+"\n";
+            I+="  3 <int>                      --Set LLM model           (leave [value] empty to get hint)      "+Current+": "+to_string(this->profile.model)+"\n";
+            I+="  4 <int>                      --Set OpenRouter LLM      (leave [value] empty to get hint)      "+Current+": "+to_string(this->profile.openroute_model)+"\n";
+            I+="  5 <path>                     --Set Extension system path                                      "+Current+": "+this->profile.extension_env+"\n";
+            I+="  6 <int>                      --Set max tokens          "+Current+": "+to_string(this->profile.max_tokens)+"\n";
+            I+="  7 '0'/'1'                    --Set stream              "+Current+": "+to_string(this->profile.stream)+"\n";
+            I+="  8 <float>                    --Set temperature         "+Current+": "+to_string(this->profile.temperature)+"\n";
+            I+="  9 <float>                    --Set top_p               "+Current+": "+to_string(this->profile.top_p)+"\n";
+            I+=" 10 <int>                      --Set max messages        "+Current+": "+to_string(this->profile.max_message)+"\n";
+            I+=" 11 'none'/'auto'/'required'   --Set tool choice         "+Current+": "+this->profile.tool_choice+"\n";
             break;
     }
     return I;

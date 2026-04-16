@@ -8,6 +8,7 @@
 #include <mutex>
 #include "vector"
 #include "../api/syagent_interface.h"
+#include "../data/sydata.h"
 #ifdef _WIN32
 #include "../../lib-w/json/json.hpp"
 #else
@@ -16,7 +17,7 @@
 #define sleep_2(s) std::this_thread::sleep_for(std::chrono::milliseconds(100*s));
 #define INPUT_POOL_SIZE 10
 #define CURRENT this->profile
- 
+
 struct inputs_{
     std::string message;
     std::string image;
@@ -88,7 +89,7 @@ namespace sagtlib{
         std::deque<nlohmann::json> message_pool;//all the mssages
         int chat_state;
         std::vector<SKILL> SKILLs;        
-        std::unordered_map<std::string, size_t> SKILL_map;
+    //  std::unordered_map<std::string, size_t> SKILL_map;
         //whether the threads should be force to stop to end the whole Process
         bool on;
     private:

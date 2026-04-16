@@ -33,14 +33,27 @@ static void handle_client_in(sagtlib::Agent* agent,int socket){
         buffer_string.append(buffer, n);
         head_end = buffer_string.find("\r\n\r\n");
         if (head_end == std::string::npos) continue;
-        body_content_info = buffer_string.find("Content-Length: ");
         break;
     }
-    
-    if (body_content_info == std::string::npos) {// response a GET 
-        SEND_IN_ONCE(agent,"Hi,syagent~\n",socket)
-        return;
+
+    {//parse Http method and path
+        std::string method_="";
+        std::string path_="";
+        std::istringstream ss(buffer_string);
+        ss>>method_;
+        ss>>path_;
+        if(method_=="GET"){
+            SEND_IN_ONCE(agent,"Hi,syagent~\n",socket)
+            return;
+        }
+        if(path_!="/chat"){
+            SEND_IN_ONCE(agent,"Incorrect path\n",socket)
+            return;
+        }
+        body_content_info = buffer_string.find("Content-Length: ");  
+        
     }
+    
     {// start to Receive json content
         try {
             int i = std::stoul(buffer_string.substr(body_content_info + 16)); 
@@ -124,7 +137,7 @@ void sagtlib::Agent::listen_server() {
         sleep_2(2);
         int socket_in=accept(this->socket_num, nullptr, nullptr);
         if (socket_in == -1)break;
-        std::cout << "got one client connecting to socket " << socket_in << "\n";
+        MES_4_0
         handle_client_in(this,socket_in);
     }
 }

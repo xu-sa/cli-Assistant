@@ -17,10 +17,10 @@ static json handle_read_json(const string& filename){
     std::ifstream file(p.string());
     try{
         data = json::parse(file);
-        cout<<"Reading file "<<filename<<"\n";
+        MES_1_0
     }
     catch(const json::parse_error& e){
-        cout<<"Error: Failed to read file "+filename+"\n";
+        MES_1_1
         data={};
     }
     file.close();
@@ -57,9 +57,9 @@ static string handle_save(json* save,const string& home,const string& room,const
     if (file.is_open()) {
         file << save->dump(4);
         file.close();
-        return "Succeed Caching "+home+"/"+room+"/"+filename+"\n";
+        return string(SUCCESS_COLOR)+"Succeed Caching "+home+"/"+room+"/"+filename+string(COLOR_RESET)+"\n";
     }
-    return "Failed saving to "+home+"/"+room+"/"+filename+"\n";
+    return string(WARN_COLOR)+"Failed saving to "+home+"/"+room+"/"+filename+string(COLOR_RESET)+"\n";
 }
 
 string sagtlib::Agent::load_ex() {
@@ -91,7 +91,7 @@ string sagtlib::Agent::load_ex() {
                             !jsonData.contains("name")||
                             jsonData["name"]!=folderName
                         ){
-                            std::cout<<"Error: tool must have the same name as it's folder in the definition\n";
+                            MES_1_2
                             continue;
                         }
                         if(
@@ -105,12 +105,12 @@ string sagtlib::Agent::load_ex() {
                                 )
                             )
                         ){
-                            std::cout<<"Error: skill type is rather undefined ,Mismatched or incorrect\n";
+                            MES_1_3
                             continue;
                         }
                         vector<array<string,5>> def;
 
-                        def.push_back({jsonData["name"],jsonData["description"],jsonData["type"],"",""});
+                        def.push_back({jsonData["name"],jsonData["description"],jsonData["type"],(jsonData["status"]=="1"?"":"c"),""});
                         for(auto &i:jsonData["parameters"]){
                             string enums="";
                             if(i["enum"].is_array())for(const auto& ii:i["enum"])enums+=ii.get<std::string>()+" ";
@@ -126,7 +126,7 @@ string sagtlib::Agent::load_ex() {
                         res+=folderName+" ";
                     }
                     catch(exception& e){
-                        std::cout<<"Error Occurred when registering tool '"<<folderName<<"' : "<<e.what()<<"\n";
+                        MES_1_4
                     } 
                 }
 
@@ -134,7 +134,7 @@ string sagtlib::Agent::load_ex() {
         }
         return res+"\n";
     } catch (const fs::filesystem_error& e) {
-        return "Error accessing extension Folder(you may need to Configure the extension path): " + string(e.what())+"\n";
+        return MES_1_5
     }
    
 }
@@ -198,7 +198,7 @@ string sagtlib::Agent::load_cf(){
     }
     
     this->on=1;
-    return "Initiated agent "+this->profile.name+"\n";
+    return MES_1_6
 }
 
 string sagtlib::Agent::load_ch(const string& option){
@@ -215,14 +215,14 @@ string sagtlib::Agent::load_ch(const string& option){
     );
     if(data.empty())return "cant use this file as reload chat\n";
     this->message_pool=data;
-    return "Reloaded chat history : "+I+"\n";
+    return MES_1_7
 }
 
 string sagtlib::Agent::save(const string& choice){
     json save;
     if(choice=="h"){//save chat history
         save=this->message_pool;
-        return handle_save(&save,this->home,this->room,(get_time()+"chat.json"));
+        return MES_1_8
     }
     else if(choice=="p"){//save config
         //save["whoyouare"]=this->profile.whoyouare;
@@ -238,7 +238,7 @@ string sagtlib::Agent::save(const string& choice){
         save["tool_choice"]=this->profile.tool_choice;
         save["local_socket"]=this->profile.local_llm_socket;
         save["extension"]=this->profile.extension_env;
-        return handle_save(&save,this->home,this->room,"profile.json");
-    }else return "no such option\n";
+        return MES_1_9
+    }else return MES_1_10
 }
 
