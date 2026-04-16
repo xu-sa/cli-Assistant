@@ -7,7 +7,10 @@
 #define MAX_IMAGE_SIZE 2 * 1024 * 1024
 using namespace std;
 #define PRINT_ERROR std::cout<<"Unexpected Error Occurred : 11";
-
+static const std::string base64_chars = 
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    "abcdefghijklmnopqrstuvwxyz"
+    "0123456789+/";
 inline static void encode_triplet(unsigned char char_array_3[3], unsigned char char_array_4[4]) {
     char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
     char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
@@ -87,34 +90,34 @@ std::string decode_image(const std::string& filepath) {
     return i;   
 }
 
-std::string decode_txt(const std::string& path) {    
-    std::ifstream file(path);
-    if (!file.is_open()) {
-        return "**cant open file: " + path + "**";
-    }
+// std::string decode_txt(const std::string& path) {    
+//     std::ifstream file(path);
+//     if (!file.is_open()) {
+//         return "**cant open file: " + path + "**";
+//     }
     
-    std::string content;// data stored on the heap memory
-    std::string line;
-    while (std::getline(file, line)) {
-        content += line + "\n";
-    }
+//     std::string content;// data stored on the heap memory
+//     std::string line;
+//     while (std::getline(file, line)) {
+//         content += line + "\n";
+//     }
     
-    file.close();
+//     file.close();
 
-    const size_t MAX_LENGTH = 1024*10;
-    if (content.length() > MAX_LENGTH) {
-        content = content.substr(0, MAX_LENGTH) + "\n...(file is too long to view here)";
-    }
+//     const size_t MAX_LENGTH = 1024*10;
+//     if (content.length() > MAX_LENGTH) {
+//         content = content.substr(0, MAX_LENGTH) + "\n...(file is too long to view here)";
+//     }
     
-    return "**user send a text file**:\n```\n" + content + "\n```";
-}
+//     return "**user send a text file**:\n```\n" + content + "\n```";
+// }
 
-std::string decode_audio(const string& path){
-    return "**user send a audio file but currently cant parse this audio file**";
-}
+// std::string decode_audio(const string& path){
+//     return "**user send a audio file but currently cant parse this audio file**";
+// }
 
-std::string decode_video(const string& path){
-    return "**user send a video file but currently cant parse this video file**";
-}
+// std::string decode_video(const string& path){
+//     return "**user send a video file but currently cant parse this video file**";
+// }
 
  
