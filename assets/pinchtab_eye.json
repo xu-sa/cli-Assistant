@@ -1,0 +1,21 @@
+{
+	"name":"pinchtab_eye",
+	"type":"py",
+	"status": "1",
+	"description":"part of pinchtab skills:this part let you see the web page and find interactive elements",
+	"parameters":[
+		{
+		"name":"action",
+        	"type": "string",
+        	"enum": ["find", "snap"],
+        	"description": "'snap' shows you the elements of the current web page ;'find' locates elements by natural-language description",
+        	"required": "1"
+     	 	},
+	 	{
+	 	"name":"input",
+        	"type": "string",
+        	"description": "only used for 'find', the Description or name of the element you want",
+        	"required":"0"
+		}
+	]
+}

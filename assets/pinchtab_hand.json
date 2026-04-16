@@ -1,0 +1,27 @@
+{
+	"name":"pinchtab_hand",
+	"type":"py",
+	"status": "1",
+	"description":"part of pinchtab skills:this part let you use the web page and Interact with elements",
+	"parameters":[
+		{
+		"name":"action",
+        	"type": "string",
+        	"enum": ["nav", "click", "type"],
+        	"description": "'nav' to another url;'click' the element you found;'type' some words to the element you found",
+        	"required":"1"
+     	 	},
+	 	{
+	 	"name":"target",
+        	"type": "string",
+        	"description": "URL address for 'nav' or html element ID for 'type'/'click'",
+        	"required":"1"
+		},
+		{
+	 	"name":"input_value",
+        	"type": "string",
+        	"description": "only used for 'type',the words you want to type",
+        	"required":"0"
+		}
+	]	
+}
