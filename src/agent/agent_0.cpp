@@ -5,11 +5,13 @@
 #define PRINT_ERROR std::cout<<"Unexpected Error Occurred : 4";
 using json=nlohmann::json;
 using namespace std;
+
 static vector<int> dr_tool_in_use;
 static int tool_size=0;
-json request_body;
-json all_tool;
-string message_reply;
+static json request_body;
+static json all_tool;
+static string message_reply;
+static int tool_state[3]={0};//working failed terminal
 
 static void handle_tool_request(sagtlib::Agent* a,json* agent_reply){
     a->message_pool.push_back({{"role",(*agent_reply)["role"]},{"content",(*agent_reply)["content"]},{"tool_calls",(*agent_reply)["tool_calls"]}});
@@ -141,13 +143,16 @@ void sagtlib::Agent::register_tool(const string definition_[][5],size_t amount, 
 json sagtlib::Agent::run_tool(SKILL* s,json* data){
     if(!s)return {{"role","tool"},{"content","This tool is not registered/no such tool"},{"tool_call_id",(*data)["id"]}};
     // if(this->debugger)cout<<"\nDEBUGGER: Handling Tool Request Data : "<<(*data).dump()<<endl;
-    if(this->working_count==8)return{{"role","tool"},{"content","You Have Been Continually Request tool for too many times,Please mention the situation to user and ask for next move"},{"tool_call_id",(*data)["id"]}};
-    if(this->fail_count>=4)return{{"role","tool"},{"content","Tool keeps Failing , you may choose to report this malfunctioning tool"},{"tool_call_id",(*data)["id"]}};      
+    if(tool_state[0]==TOOL_CALL_LIM)return{{"role","tool"},{"content","You Have Been consistently request tool for too many times,take a break and do a short summarize"},{"tool_call_id",(*data)["id"]}};
+    if(tool_state[1]>=TOOL_FAILED_LIM)return{{"role","tool"},{"content","Tool keeps Failing , please report this malfunctioning tool"},{"tool_call_id",(*data)["id"]}};      
+    if(tool_state[2]>=TERMINAL_CALL_LIM)return{{"role","tool"},{"content","Terminal tool call ratio Limit Reached,please slow down."},{"tool_call_id",(*data)["id"]}};
     if(!s->state) return {{"role","tool"},{"content","The Tool is temporarily Disabled"},{"tool_call_id",(*data)["id"]}};
     json result;
     result["role"]="tool";
     result["tool_call_id"]=(*data)["id"];
     try{
+        tool_state[0]+=1;
+        tool_state[2]+=((*data)["name"]=="terminal_"?1:0);
         string data_[5];        
         if(s->type==""){//not a extension skill,has tag within [0,2]
             for(size_t i=0;i<s->parameter_format.size();i++)data_[i]=(
@@ -163,13 +168,11 @@ json sagtlib::Agent::run_tool(SKILL* s,json* data){
             data_[3]=this->profile.extension_env;
         }
         result["content"]=s->fuc(data_);
-        this->working_count+=1;
-        this->fail_count=0;
+        
     }
     catch(const std::exception& e){
         result["content"]=std::string(e.what());
-        this->working_count=0;
-        this->fail_count+=1;
+        tool_state[1]+=1;
     };
     return result;
 }
@@ -204,6 +207,9 @@ string sagtlib::Agent::send(){
         this->message_pool.back()["content"]=message+"\n**here was a Instant-viewed image**";
     }
     json agent_reply = handle_post((this->profile.local_llm_socket==-1?urls[this->profile.provider][0]:"127.0.0.1:"+to_string(this->profile.local_llm_socket)+"/chat/completions"),this->profile.api,&request_body);
+    request_body.clear();
+    all_tool.clear();
+
     if (agent_reply["code_"] == 200) {
         message_reply=agent_reply["content"].get<std::string>();
         {//to parse the raw string from json into readable
@@ -213,7 +219,6 @@ string sagtlib::Agent::send(){
                 pos += 1;
             }
         }
-      
         if (agent_reply.contains("tool_calls")){//tool is called
             this->chat_state=2;
             handle_tool_request(this,&agent_reply);
@@ -223,16 +228,14 @@ string sagtlib::Agent::send(){
     else{//if http Response is not Succeed
         this->message_pool.push_back({{"role","assistant"},{"content","ummm..."}});//this Prevents broken message Sequence
     }
-    this->working_count=0;
-    this->fail_count=0;
     this->chat_state=1;
     if(dr_tool_in_use.size()>0){
         for(int i:dr_tool_in_use)this->SKILLs[i].state=0;
         dr_tool_in_use.clear();
     }
-    request_body.clear();
-    all_tool.clear();
-    
+    tool_state[0]=0;
+    tool_state[1]=0;
+    tool_state[2]=0;
     if(agent_reply["code_"]!=200){
         return MES_0_3
     }
@@ -249,7 +252,6 @@ sagtlib::Agent::Agent(const string& home,const string& room):home(home),room(roo
         this->queued_input=0;
     }
     cout<<this->load_cf();
-    // cout<<this->load_ex();
     this->start_main_thread();
 }
 

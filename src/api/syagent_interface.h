@@ -3,10 +3,7 @@
 
 #define INT_PARAMETER "integer"
 #define STRING_PARAMETER "string"
-#define NUMBER_PARAMETER "number"
-
 #define BOOL_PARAMETER "boolean"
-#define ARRAY_PARAMETER "array"
 #define OBJECT_PARAMETER "object"
 #define NULL_PARAMETER "null"
 #define DEFINE_TOOL(Toolname,description,...) std::string Toolname[][5]={{#Toolname,description,"","",""},__VA_ARGS__};// to define a tool from a Customized function with any discription and parameter definition.
@@ -16,8 +13,8 @@
 #include <functional>
 
 namespace sagtlib{
-//    void set_extension_env(const char*);
     class sagent {
+        
     public:
         bool debugger;
         virtual ~sagent();

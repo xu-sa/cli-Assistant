@@ -190,13 +190,7 @@ string sagtlib::Agent::load_cf(){
         });
     
     }
-    
-    {//input buffer 
-        this->chat_state = 1;
-        this->working_count = 0;
-        this->fail_count = 0;
-    }
-    
+    this->chat_state = 1;    
     this->on=1;
     return MES_1_6
 }

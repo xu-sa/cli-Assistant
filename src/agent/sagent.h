@@ -89,21 +89,13 @@ namespace sagtlib{
         std::deque<nlohmann::json> message_pool;//all the mssages
         int chat_state;
         std::vector<SKILL> SKILLs;        
-    //  std::unordered_map<std::string, size_t> SKILL_map;
-        //whether the threads should be force to stop to end the whole Process
         bool on;
     private:
         Model_setup profile;//a Structure Containing all the configs of LLM
-        //inputs buffer and indications
         int queued_input;
-        //bool image_attached;
-        int working_count;
-        int fail_count;
-        //server socket number disturbed by kernel 
         int socket_num;
         std::string home;
         std::string room;
-        //the Multi thread setting 
         std::mutex input_mutex;  
         std::thread main_thread; 
         std::thread server_thread;

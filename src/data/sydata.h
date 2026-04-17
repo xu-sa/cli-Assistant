@@ -5,7 +5,9 @@
 #define OPEN_ROUTE_SIZE sizeof(models_open_router) / sizeof(models_open_router[0])
 #define LOCAL_USER "super user"
 #define COLOR_RESET   "\033[0m"
-
+#define TOOL_FAILED_LIM 3
+#define TOOL_CALL_LIM 10
+#define TERMINAL_CALL_LIM 6
 // 前景色
 #define COLOR_BLACK   "\033[30m"
 #define COLOR_RED     "\033[31m"

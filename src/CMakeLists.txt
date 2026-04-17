@@ -1,59 +1,43 @@
+# if(WIN32)
+# set(LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../lib-w)
+# else()
+# set(LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../lib-l)
+# endif()
+# find_library(CURL_STATIC_LIB NAMES curl libcurl PATHS ${LIB_DIR}/curl/lib NO_DEFAULT_PATH)
 
+# if(CURL_STATIC_LIB)
+#     message(STATUS "Found static curl: ${CURL_STATIC_LIB}")
+#     if(WIN32)
+#         set(CURL_LIBRARIES
+#             ${CURL_STATIC_LIB}
+#         )
+#     else()
+#         # find_library(MBEDTLS_LIB NAMES mbedtls PATHS ${LIB_DIR}/mbedtls/lib NO_DEFAULT_PATH)
+#         # find_library(MBEDCRYPTO_LIB NAMES mbedcrypto PATHS ${LIB_DIR}/mbedtls/lib NO_DEFAULT_PATH)
+#         # find_library(MBEDX509_LIB NAMES mbedx509 PATHS ${LIB_DIR}/mbedtls/lib NO_DEFAULT_PATH)
+#         # find_library(ZLIB_STATIC NAMES z zlibstatic zlib PATHS ${LIB_DIR}/zlib/lib NO_DEFAULT_PATH)
 
-if(WIN32)
-set(LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../lib-w)
-else()
-set(LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../lib-l)
-endif()
-find_library(CURL_STATIC_LIB NAMES curl libcurl PATHS ${LIB_DIR}/curl/lib NO_DEFAULT_PATH)
-
-if(CURL_STATIC_LIB)
-    message(STATUS "Found static curl: ${CURL_STATIC_LIB}")
-    if(WIN32)
-        # find_library(WS2_32 NAMES ws2_32)
-        # find_library(WLDAP32 NAMES wldap32)
-        # find_library(ADVAPI32 NAMES advapi32)
-        # find_library(CRYPT32 NAMES crypt32)
-        # find_library(IPHLPAPI NAMES iphlpapi)
-        # find_library(NORMALIZ NAMES normaliz)
-        set(CURL_LIBRARIES
-            ${CURL_STATIC_LIB}
-            # ${MBEDTLS_LIB}
-            # ${MBEDCRYPTO_LIB}
-            # ${MBEDX509_LIB}
-            # ${ZLIB_STATIC}
-            # ${WS2_32}
-            # ${WLDAP32}
-            # ${ADVAPI32}
-            # ${CRYPT32}
-            # ${IPHLPAPI}
-            # ${NORMALIZ}
-        )
-    else()
-        # find_library(MBEDTLS_LIB NAMES mbedtls PATHS ${LIB_DIR}/mbedtls/lib NO_DEFAULT_PATH)
-        # find_library(MBEDCRYPTO_LIB NAMES mbedcrypto PATHS ${LIB_DIR}/mbedtls/lib NO_DEFAULT_PATH)
-        # find_library(MBEDX509_LIB NAMES mbedx509 PATHS ${LIB_DIR}/mbedtls/lib NO_DEFAULT_PATH)
-        # find_library(ZLIB_STATIC NAMES z zlibstatic zlib PATHS ${LIB_DIR}/zlib/lib NO_DEFAULT_PATH)
-
-        find_library(PTHREAD_LIB NAMES pthread)
-        find_library(DL_LIB NAMES dl)
-        find_library(RT_LIB NAMES rt) 
-        set(CURL_LIBRARIES
+#         find_library(PTHREAD_LIB NAMES pthread)
+#         find_library(DL_LIB NAMES dl)
+#         find_library(RT_LIB NAMES rt) 
+#         set(CURL_LIBRARIES
             
-            ${CURL_STATIC_LIB}
-            # ${MBEDTLS_LIB}
-            # ${MBEDCRYPTO_LIB}
-            # ${MBEDX509_LIB}
-            # ${ZLIB_STATIC}
-            ${PTHREAD_LIB}#multi threading
-            ${DL_LIB}#dynamic loading
-            ${RT_LIB}#real time
-        )
-    endif()
-    add_definitions(-DCURL_STATICLIB)
-else()
-    message(FATAL_ERROR "Static curl library not found in ${LIB_DIR}/curl/lib")
-endif()
+#             ${CURL_STATIC_LIB}
+
+#             # ${MBEDTLS_LIB}
+#             # ${MBEDCRYPTO_LIB}
+#             # ${MBEDX509_LIB}
+#             # ${ZLIB_STATIC}
+
+#             ${PTHREAD_LIB}#linux standard lib multi threading 
+#             ${DL_LIB}#linux standard lib dynamic loading
+#             ${RT_LIB}#linux standard lib real time
+#         )
+#     endif()
+#     add_definitions(-DCURL_STATICLIB)
+# else()
+#     message(FATAL_ERROR "Static curl library not found in ${LIB_DIR}/curl/lib")
+# endif()
 
 add_library(SYagent STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/file/util_parse_file.cpp
@@ -95,7 +79,7 @@ target_precompile_headers(SYagent PRIVATE
 
 target_compile_features(SYagent PUBLIC cxx_std_17)
 
-target_link_libraries(SYagent PRIVATE ${CURL_LIBRARIES})
+# target_link_libraries(SYagent PRIVATE ${CURL_LIBRARIES})
 
 if(WIN32)
 target_link_libraries(SYagent PRIVATE 
@@ -108,15 +92,16 @@ target_link_libraries(SYagent PRIVATE
         bcrypt#provide bcrypt for random number generation
         secur32#provide secur32 for SSPI
 )
+
 set_target_properties(SYagent PROPERTIES
-    OUTPUT_NAME "SLagent-w"
-    VERSION 1.0.5
+    OUTPUT_NAME "sagentw"
+    VERSION 1.0.8
     SOVERSION 1
 )
 else()
 set_target_properties(SYagent PROPERTIES
-    OUTPUT_NAME "SLagent-l"
-    VERSION 1.0.5
+    OUTPUT_NAME "sagentl"
+    VERSION 1.0.8
     SOVERSION 1
 )
 endif()

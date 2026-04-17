@@ -40,6 +40,8 @@ sagtlib::sagent* sagtlib::sagent::create(const char* home,const string& room){
         )
         REGISTER_TOOL(A,select_,func2);//tag 2
     }
+    cout<<A->load_ex();
+
     return A;
 }
 void sagtlib::sagent::destroy(sagtlib::sagent* instance){
