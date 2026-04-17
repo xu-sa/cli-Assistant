@@ -11,6 +11,19 @@ a ai tool Designed to help Improve Efficiency working on command line Interface
 3:send Multiple types of file via termial 
 
 # Prerequisite: nlohmann::json & curl (all Available in the lib-l/lib-w folder)
+# Extension:
+you can register your own tools in form of :
+as Cpp function:
+which is hardcoded ,low Efficiency and not Flexible.
+you can use macro defined in the api header file to define your tool and bind it to a Cpp function Implemented on your own.
+
+as External apps:
+if you have a CLI tool, you can create a json file to Describe how to use and what it does,then place them in 
+Proper Structure so than the project can Recognise them and register as Agent tool.
+
+Currently you can find python Samples in ./assets folder.
+
+https://github.com/pinchtab/pinchtab is Already emerged as a external app.
 
 # build on linux
 clone Repository
