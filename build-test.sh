@@ -4,7 +4,7 @@ g++ -std=c++17 -DCURL_STATICLIB \
     -I./test/lib \
     ./test/main.cpp \
     -Wl,--start-group \
-    ./test/lib/libSLagent-l.a \
+    ./test/lib/libsagentl.a \
     ./lib-l/curl/lib/libcurl.a \
     ./lib-l/mbedtls/lib/libmbedtls.a \
     ./lib-l/mbedtls/lib/libmbedx509.a \
