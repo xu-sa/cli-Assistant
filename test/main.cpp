@@ -3,14 +3,12 @@
 using namespace std;
 //~/.local/share
 #ifdef _WIN32
-#define DEFAULT_HOME argv[0]
 #define DEFAULT_ROOM "windows-agent"
-#define DEFAULT_PORT 9995
 #else 
-#define DEFAULT_HOME argv[0]
 #define DEFAULT_ROOM "linux-agent"
-#define DEFAULT_PORT 9995
 #endif
+#define DEFAULT_HOME argv[0]
+#define DEFAULT_PORT 9995 
 int main(int argc,const char** argv) {//usage sample: ./main -home -room -port 
     sagtlib::sagent* agent = sagtlib::sagent::create((argc<2?DEFAULT_HOME:argv[1]),(argc<3?DEFAULT_ROOM:argv[2]));
     if (agent!=NULL) {
