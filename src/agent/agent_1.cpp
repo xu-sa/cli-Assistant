@@ -122,7 +122,7 @@ string sagtlib::Agent::load_ex() {
                                 c_array[i][j] = def[i][j];
                             }
                         }
-                        REGISTER_TOOL(this,c_array,skill_2);
+                        REGISTER_TOOL(this,c_array,external_tool);
                         res+=folderName+" ";
                     }
                     catch(exception& e){
@@ -216,7 +216,7 @@ string sagtlib::Agent::save(const string& choice){
     json save;
     if(choice=="h"){//save chat history
         save=this->message_pool;
-        return MES_1_8
+        return handle_save(&save,this->home,this->room,(get_time()+"chat.json"));
     }
     else if(choice=="p"){//save config
         //save["whoyouare"]=this->profile.whoyouare;
@@ -232,7 +232,7 @@ string sagtlib::Agent::save(const string& choice){
         save["tool_choice"]=this->profile.tool_choice;
         save["local_socket"]=this->profile.local_llm_socket;
         save["extension"]=this->profile.extension_env;
-        return MES_1_9
+        return handle_save(&save,this->home,this->room,"profile.json");
     }else return MES_1_10
 }
 

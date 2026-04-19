@@ -38,6 +38,7 @@
 #define WARN_COLOR    COLOR_YELLOW BOLD
 #define INFO_COLOR    COLOR_CYAN BOLD
 #define SUCCESS_COLOR COLOR_GREEN BOLD
+#define BLUE_BOLD COLOR_BLUE BOLD
 
 #define MES_0_0 std::cout<<"updated tool "<<definition["function"]["name"]<<"\n";
 #define MES_0_1 std::cout<<SUCCESS_COLOR<<"Registered tool "<<COLOR_RESET<<tool_size<<": "<<definition["function"]["name"]<<" "<<(new_skill.state?"+":"-")<<"\n";
@@ -54,8 +55,8 @@
 #define MES_1_5 string(WARN_COLOR)+"Error accessing extension Folder(you may need to Configure the extension path): "+string(COLOR_RESET)+ string(e.what())+"\n";
 #define MES_1_6 string(SUCCESS_COLOR)+"Loaded agent "+""+this->profile.name+string(COLOR_RESET)+"\n";
 #define MES_1_7 "Reloaded chat history : "+I+"\n";
-#define MES_1_8 handle_save(&save,this->home,this->room,(get_time()+"chat.json"));
-#define MES_1_9 handle_save(&save,this->home,this->room,"profile.json");
+
+
 #define MES_1_10 "no such option\n";
 
 #define MES_2_0 "Error: Unrecognizable user id\n"

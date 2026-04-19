@@ -7,7 +7,7 @@
 #include <chrono>
 #include <mutex>
 #include "vector"
-#include "../api/syagent_interface.h"
+#include "../api/sagtapi.h"
 #include "../data/sydata.h"
 #ifdef _WIN32
 #include "../../lib-w/json/json.hpp"
@@ -18,11 +18,17 @@
 #define INPUT_POOL_SIZE 10
 #define CURRENT this->profile
 
-struct inputs_{
-    std::string message;
-    std::string image;
+struct agent_input{
+    std::string message;//message
+    std::string image;//leave empty for no image input
+    std::string client_id;//to identify which channel and which person is sending message to LLM
+    //if -1 ,send to terminal;
+    //if -2 ,send to discord;
+    //if -3 ,send to telegram;
+    //if -4 ,send to wechat;
+    //if -5 ,send to qq; 
+    //if >0 ,send to Corresponding socket
     int client_socket;
-    std::string client_id;
 };  
 
 struct SKILL{
@@ -68,6 +74,7 @@ namespace sagtlib{
         std::string save(const std::string &choice);//to save whether config or chat history to home/room/
         //stage 2
         void push_input(int socket,const std::string& client_id,const std::string& text,const std::string& image) override;//to add a new message to prepare for handling
+        void push_input_(agent_input*);
         void listen_input();//loop to check whether to send message
         void start_main_thread();//start instance thread
         void stop_all_thread();//stop instance thread
@@ -83,7 +90,7 @@ namespace sagtlib{
         void start_server();//start server and bind on a specified port
         void stop_server();//stop server
         void listen_server();//loop to wait and handle port Requests
-        inputs_ input_pool[INPUT_POOL_SIZE];
+        agent_input input_pool[INPUT_POOL_SIZE];
         int push_in;
         int push_out;
         std::deque<nlohmann::json> message_pool;//all the mssages

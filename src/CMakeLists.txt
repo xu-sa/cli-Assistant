@@ -95,13 +95,13 @@ target_link_libraries(SYagent PRIVATE
 
 set_target_properties(SYagent PROPERTIES
     OUTPUT_NAME "sagentw"
-    VERSION 1.0.8
+    VERSION 1.0.5
     SOVERSION 1
 )
 else()
 set_target_properties(SYagent PROPERTIES
     OUTPUT_NAME "sagentl"
-    VERSION 1.0.8
+    VERSION 1.0.5
     SOVERSION 1
 )
 endif()
@@ -120,7 +120,7 @@ add_custom_command(TARGET SYagent POST_BUILD
 
 add_custom_command(TARGET SYagent POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_CURRENT_SOURCE_DIR}/api/syagent_interface.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/api/sagtapi.h"
         "${INSTALL_LIB_DIR}"
     COMMENT "Copying header to ${INSTALL_LIB_DIR}"
 )

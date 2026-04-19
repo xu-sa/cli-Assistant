@@ -5,7 +5,7 @@
 #include <iostream>
 #define PRINT_ERROR std::cout<<"Unexpected Error Occurred : 7";
 #ifndef Current
-#define Current string(COLOR_BLUE)+"Current"+string(COLOR_RESET)
+#define Current string(BLUE_BOLD)+"Current"+string(COLOR_RESET)
 #endif 
 using json=nlohmann::json;
 using namespace std; //   /loads <path>             --load skill from select folder\n

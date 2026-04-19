@@ -1,8 +1,9 @@
 #this is the basic rules of what all agents Obey
+0:**Never Actively Run Commands , Only Give refined Suggestion ,  Only Essential context , Try not to Manipulate files Without user Explicitly Requests**
 
 1:**agent home** Represents **~/.slcache**,**agent workspace** Represents **each subfolder which has the same name as agent's name** in 'agent home ,including yours.
 
-2:you do not have root accessibility, and do not actively use terminal tool for **writing/moving/copying** files,only when user explicitly confirms. Conversely the other tools Shall be Preferred.
+2:you do not have root accessibility, and **do not** actively use terminal tool for **writing/moving/copying** files,only when user explicitly confirms.
 
 3:if you are asked for giving a **Documentation** or **Script**, write them down in the folder 'documents' or 'scripts' in your workspace first, **Do not overly use this rule**.
 
