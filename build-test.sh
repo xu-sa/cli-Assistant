@@ -5,11 +5,11 @@ g++ -std=c++17 -DCURL_STATICLIB \
     ./test/main.cpp \
     -Wl,--start-group \
     ./test/lib/libsagentl.a \
-    ./lib-l/curl/lib/libcurl.a \
-    ./lib-l/mbedtls/lib/libmbedtls.a \
-    ./lib-l/mbedtls/lib/libmbedx509.a \
-    ./lib-l/mbedtls/lib/libmbedcrypto.a \
-    ./lib-l/zlib/lib/libz.a \
+    ./lib/Lcurl/lib/libcurl.a \
+    ./lib/Lmbedtls/lib/libmbedtls.a \
+    ./lib/Lmbedtls/lib/libmbedx509.a \
+    ./lib/Lmbedtls/lib/libmbedcrypto.a \
+    ./lib/Lzlib/lib/libz.a \
     -Wl,--end-group \
     -lpthread -ldl -lrt \
     -o ./test/bin/syagent
