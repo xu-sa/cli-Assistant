@@ -1,4 +1,4 @@
-#include "./lib/sagtapi.h"
+#include "../src/api/sagtapi.h"
 #include <iostream>
 using namespace std;
 //~/.local/share
