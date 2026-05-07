@@ -1,43 +1,3 @@
-# if(WIN32)
-# set(LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../lib-w)
-# else()
-# set(LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../lib-l)
-# endif()
-# find_library(CURL_STATIC_LIB NAMES curl libcurl PATHS ${LIB_DIR}/curl/lib NO_DEFAULT_PATH)
-
-# if(CURL_STATIC_LIB)
-#     message(STATUS "Found static curl: ${CURL_STATIC_LIB}")
-#     if(WIN32)
-#         set(CURL_LIBRARIES
-#             ${CURL_STATIC_LIB}
-#         )
-#     else()
-#         # find_library(MBEDTLS_LIB NAMES mbedtls PATHS ${LIB_DIR}/mbedtls/lib NO_DEFAULT_PATH)
-#         # find_library(MBEDCRYPTO_LIB NAMES mbedcrypto PATHS ${LIB_DIR}/mbedtls/lib NO_DEFAULT_PATH)
-#         # find_library(MBEDX509_LIB NAMES mbedx509 PATHS ${LIB_DIR}/mbedtls/lib NO_DEFAULT_PATH)
-#         # find_library(ZLIB_STATIC NAMES z zlibstatic zlib PATHS ${LIB_DIR}/zlib/lib NO_DEFAULT_PATH)
-
-#         find_library(PTHREAD_LIB NAMES pthread)
-#         find_library(DL_LIB NAMES dl)
-#         find_library(RT_LIB NAMES rt) 
-#         set(CURL_LIBRARIES
-            
-#             ${CURL_STATIC_LIB}
-
-#             # ${MBEDTLS_LIB}
-#             # ${MBEDCRYPTO_LIB}
-#             # ${MBEDX509_LIB}
-#             # ${ZLIB_STATIC}
-
-#             ${PTHREAD_LIB}#linux standard lib multi threading 
-#             ${DL_LIB}#linux standard lib dynamic loading
-#             ${RT_LIB}#linux standard lib real time
-#         )
-#     endif()
-#     add_definitions(-DCURL_STATICLIB)
-# else()
-#     message(FATAL_ERROR "Static curl library not found in ${LIB_DIR}/curl/lib")
-# endif()
 set(LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../lib)
 add_library(SYagent STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/file/util_parse_file.cpp
@@ -51,34 +11,26 @@ add_library(SYagent STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/api/interface.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/local_tool/cli_tool.cpp
 )
-# if(WIN32)
-    
-# else()
-    
-# endif()
-
 target_precompile_headers(SYagent PRIVATE
     <string>
     <vector>
 )
 target_compile_features(SYagent PUBLIC cxx_std_17)
 
-
-
 if(WIN32)
+    target_compile_definitions(SYagent PUBLIC CURL_STATICLIB)
     target_include_directories(SYagent PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/data
         ${CMAKE_CURRENT_SOURCE_DIR}/utils
         ${CMAKE_CURRENT_SOURCE_DIR}/agent
         ${CMAKE_CURRENT_SOURCE_DIR}/api
         ${CMAKE_CURRENT_SOURCE_DIR}/local_tool
-        ${CMAKE_CURRENT_SOURCE_DIR}/../lib/json
-        ${CMAKE_CURRENT_SOURCE_DIR}/../lib/Wcurl/include
+        ${LIB_DIR}/json
+        ${LIB_DIR}/Wcurl/include
     )
-    find_library(CURL_STATIC_LIB NAMES curl libcurl PATHS ${LIB_DIR}/Wcurl/lib NO_DEFAULT_PATH)
-    set(CURL_LIBRARIES ${CURL_STATIC_LIB})
+    # find_library(CURL_LIBRARIES NAMES curl libcurl PATHS ${LIB_DIR}/Wcurl/lib NO_DEFAULT_PATH)
     target_link_libraries(SYagent PRIVATE
-            ${CURL_LIBRARIES} 
+            ${LIB_DIR}/Wcurl/lib/libcurl.a
             ws2_32#provide windows socket
             wldap32#provide ldap
             advapi32#provide advanced api
@@ -94,35 +46,63 @@ if(WIN32)
         SOVERSION 1
     )
 else()
+    target_compile_definitions(SYagent PUBLIC CURL_STATICLIB)
     target_include_directories(SYagent PUBLIC
             ${CMAKE_CURRENT_SOURCE_DIR}/data
             ${CMAKE_CURRENT_SOURCE_DIR}/utils
             ${CMAKE_CURRENT_SOURCE_DIR}/agent
             ${CMAKE_CURRENT_SOURCE_DIR}/api
             ${CMAKE_CURRENT_SOURCE_DIR}/local_tool
-            ${CMAKE_CURRENT_SOURCE_DIR}/../lib/json
-            ${CMAKE_CURRENT_SOURCE_DIR}/../lib/Lcurl/include
+            ${LIB_DIR}/json
+            ${LIB_DIR}/Lcurl/include
         )
+    # find_library(CURL_LIBRARIES NAMES curl libcurl PATHS ${LIB_DIR}/Lcurl/lib NO_DEFAULT_PATH)
+    # find_library(MBEDTLS_LIBRARIES NAMES mbedtls libmbedtls PATHS ${LIB_DIR}/Lmbedtls/lib NO_DEFAULT_PATH)
+    # find_library(MBEDX509_LIBRARIES NAMES mbedx509 libmbedx509 PATHS ${LIB_DIR}/Lmbedtls/lib NO_DEFAULT_PATH)
+    # find_library(MBEDCRYPTO_LIBRARIES NAMES mbedcrypto libmbedcrypto PATHS ${LIB_DIR}/Lmbedtls/lib NO_DEFAULT_PATH)
+    # find_library(ZLIB_LIBRARIES NAMES z libz PATHS ${LIB_DIR}/Lzlib/lib NO_DEFAULT_PATH)
+
+    target_link_libraries(SYagent PRIVATE
+         ${LIB_DIR}/Lcurl/lib/libcurl.a
+        ${LIB_DIR}/Lmbedtls/lib/libmbedtls.a
+        ${LIB_DIR}/Lmbedtls/lib/libmbedx509.a
+        ${LIB_DIR}/Lmbedtls/lib/libmbedcrypto.a
+        ${LIB_DIR}/Lzlib/lib/libz.a
+        pthread
+        dl
+        rt
+    )
     set_target_properties(SYagent PROPERTIES
         OUTPUT_NAME "sagentl"
         VERSION 1.0.5
         SOVERSION 1
     )
 endif()
-
-set(INSTALL_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../test/lib)
-
-add_custom_command(TARGET SYagent POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${INSTALL_LIB_DIR}"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "$<TARGET_FILE:SYagent>" 
-        "${INSTALL_LIB_DIR}"
-    COMMENT "Copying library to ${INSTALL_LIB_DIR}"
+add_executable(sytest
+    ${CMAKE_CURRENT_SOURCE_DIR}/../test/main.cpp
 )
+target_link_libraries(sytest PRIVATE SYagent)
+set_target_properties(sytest PROPERTIES
+        OUTPUT_NAME "sytest"
+        VERSION 1.0.5
+        SOVERSION 1
+    )
+set(INSTALL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../test/bin)
 
-add_custom_command(TARGET SYagent POST_BUILD
+if(WIN32)
+add_custom_command(TARGET sytest POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${INSTALL_DIR}"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_CURRENT_SOURCE_DIR}/api/sagtapi.h"
-        "${INSTALL_LIB_DIR}"
-    COMMENT "Copying header to ${INSTALL_LIB_DIR}"
+        "$<TARGET_FILE:sytest>" 
+        "${INSTALL_DIR}/syagent.exe"
+    COMMENT "Copying executable to ${INSTALL_DIR}"
 )
+else()
+add_custom_command(TARGET sytest POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${INSTALL_DIR}"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "$<TARGET_FILE:sytest>" 
+        "${INSTALL_DIR}/syagent"
+    COMMENT "Copying executable to ${INSTALL_DIR}"
+)
+endif()

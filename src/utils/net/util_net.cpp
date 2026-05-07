@@ -7,9 +7,10 @@
 #endif
 #include "../../data/sydata.h"
 #define PRINT_ERROR std::cout<<"Unexpected Error Occurred : 13";
-
 using namespace std;
+
 using json=nlohmann::json;
+
 static nlohmann::json post_error = {{"error", true},{"message", "Request failed"},{"code", -999},{"data", ""}};
 
 static size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp) {

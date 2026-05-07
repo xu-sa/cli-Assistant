@@ -18,8 +18,8 @@ sagtlib::sagent* sagtlib::sagent::create(const char* home,const string& name){
     {
         DEFINE_TOOL(
             _command_,
-            "To execute a shell command on the local linux/windows machine.\
-            this tool is Not Recommend if other tool can do the same task.\
+            "To execute a shell command on local machine.\
+            this tool is Not the prioritized if other tool can do the same task.\
             Do not try to Execute or modify files unless user Explicitly permits,and Conversely,it is better to guide user to do it.",
             {"1","command",STRING_PARAMETER,"The shell command to be Executed", ""}
         )

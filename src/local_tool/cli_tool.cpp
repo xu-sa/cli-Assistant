@@ -19,6 +19,7 @@ std::string terminal_path="/";
 static char buffer[512]={0};
 using namespace std;
  
+
 string terminal_tool(const string* data) {//1
     string result = "";
     string cmd = data[0];
@@ -64,11 +65,6 @@ string external_tool(const string* data) {
     else return "Error code: 10";
     return terminal_tool(&cmd);
 }
-
-std::string tool_3(const std::string* data){
-    
-    return "return from tool_3";
-};
 std::string change_dir(const std::string* dir){
     terminal_path=dir[0];
     return "agent workpath changed to "+dir[0];
