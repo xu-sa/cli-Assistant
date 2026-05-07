@@ -54,7 +54,7 @@ create_service_file() {
     
     cat > "$SYSTEMD_USER_DIR/$SERVICE_NAME.service" << EOF
 [Unit]
-Description=~~the most efficient terminal assistant~~
+Description = a efficient terminal assistant
 
 [Service]
 Type=simple
