@@ -1,5 +1,5 @@
 {
-	"name":"pinchtab_eye",
+	"name":"pinchtab_peek",
 	"type":"py",
 	"status": "1",
 	"description":"part of pinchtab skills:this part let you see the web page and find interactive elements",

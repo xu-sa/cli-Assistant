@@ -1,9 +1,9 @@
 import requests
 import json
 import sys
-
-head={"Authorization": 'Bearer {KEY}'.format(KEY="")}
+import os
 PINCHTAB_URL = "http://127.0.0.1:9867"
+head=""
 
 def pinchtab_find(input_value=""):#only search on the current web tab
     if input_value=="":
@@ -28,18 +28,28 @@ def pinchtab_snap():#only show the interactive elements
     except Exception as e:
         return f"Exception during pinchtab snap: {str(e)}"
 
-def tool_handler(raw_args_from_cpp):
-    args = json.loads(raw_args_from_cpp)
-    action = args.get("action")
+
+def tool_handler(data:dict):
+    action=data.get("action")
     if action == "snap":
         return pinchtab_snap()
-    elif action=="find":
-        return pinchtab_find(args.get("input"))
-    
+    elif action == "find":
+        return pinchtab_find(data.get("input"))
     return "Unknown action"
+def parameter_parser(raw_args_from_cpp):
+    args = json.loads(raw_args_from_cpp)
+    action = args.get("action")
+    return tool_handler(args)
+
+
+
 if __name__ =="__main__":
-    if len(sys.argv) > 1:
-        print(tool_handler(sys.argv[1]))
-    else:
-        print(
-            "Error: No arguments provided.")
+    try:
+        env_vars = os.getenv("PINCHTAB_KEY")
+        head = {"Authorization": 'Bearer {KEY}'.format(KEY=env_vars)}
+        if len(sys.argv) > 1:
+            print(parameter_parser(sys.argv[1]))
+        else:
+            print("Error: No arguments provided.")
+    except Exception as e:
+        print(e)

@@ -1,10 +1,9 @@
 import requests
 import json
 import sys
-
+import os
 PINCHTAB_URL = "http://127.0.0.1:9867"
-head={"Authorization": 'Bearer {KEY}'.format(KEY="")}
-
+head=""
 def pinchtab_navigate(url):
     payload = {"url": url}
     try:
@@ -55,8 +54,9 @@ def tool_handler(raw_args_from_cpp):
     except Exception as e:
         return f"Error in tool_handler: {str(e)}"
 
-
 if __name__ =="__main__":
+    env_vars = os.getenv("PINCHTAB_KEY")
+    head = {"Authorization": 'Bearer {KEY}'.format(KEY=env_vars)}
     if len(sys.argv) > 1:
         print(tool_handler(sys.argv[1]))
     else:
