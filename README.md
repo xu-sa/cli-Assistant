@@ -11,6 +11,7 @@ a ai tool Designed to help Improve Efficiency working on command line Interface
 3:send Multiple types of file via termial 
 
 # Prerequisite: nlohmann::json & curl (all Available in the lib folder)
+
 # Extension:
 you can register your own tools in form of :
 as Cpp function:
@@ -47,14 +48,14 @@ install as user level service (optional):
 the same as linux, only  the 'install.bat' isnt ready yet
 
 # How to use:
-you can build the Library using ./build-lib.sh , result(.a and .h) would Appear in ./test/lib/
+you can build the Library using ./build.sh(./build.bat), and complie your only app by Referring to ./test/main.cpp
 
-Or you can download the Release Library Compressed file to get the Archive file and the header file which tells you how to use.
+Or you can download the Release Compressed file to get the test app Directly.
 
-once you have both files , here is a easy sample of how to use (you can build it via script ./build-test.sh): ./test/main.cpp
+#Run as a Server
+if you Decide to run it as a server or backgroudservice ,then the provided python scripts would help you communicating with the server socket.
 
-if you Decide to run it as a server or backgroudservice ,then './test/syagent_chat.py' would help you communicating with the server socket(you have to start server on socket 9995)
-# Terminal Interface:
+#Terminal Direct chat
 you can use and find Instruction about commands and configs once you have the sagent::interface() function running
 
 
