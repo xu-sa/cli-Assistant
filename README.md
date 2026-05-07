@@ -10,7 +10,7 @@ a ai tool Designed to help Improve Efficiency working on command line Interface
 
 3:send Multiple types of file via termial 
 
-# Prerequisite: nlohmann::json & curl (all Available in the lib-l/lib-w folder)
+# Prerequisite: nlohmann::json & curl (all Available in the lib folder)
 # Extension:
 you can register your own tools in form of :
 as Cpp function:
@@ -34,23 +34,17 @@ change directory
 ```
 cd ./cli-Assistant
 ```
-build the static lib
+build the static lib and test app(you can find it at ./test/bin)
 ```
-./build-lib.sh
+./build.sh
 ```
-at this moment the lib is built Successfully,if you want to use the test app:
-```
-./build-test.sh
-```
-
-
 install as user level service (optional):
 ```
 ./install.sh
 ```
 #build on windows
 
-the same as linux, its just i didnt get the 'install.bat' ready yet
+the same as linux, only  the 'install.bat' isnt ready yet
 
 # How to use:
 you can build the Library using ./build-lib.sh , result(.a and .h) would Appear in ./test/lib/
