@@ -27,8 +27,8 @@ static json handle_read_json(const string& filename){
     return data;
 }
 
-static string handle_get_history(const string& home, const string& room,int choice) {
-    fs::path dir_path = fs::path(home) / room;
+static string handle_get_history(const string& home,int choice) {
+    fs::path dir_path = fs::path(home) ;
     int count=0;
     string message="please specify a tag of history file:\n";
     if (fs::exists(dir_path) && fs::is_directory(dir_path)) {
@@ -47,19 +47,19 @@ static string handle_get_history(const string& home, const string& room,int choi
     return '\n'+message;
 }
 
-static string handle_save(json* save,const string& home,const string& room,const string& filename){
+static string handle_save(json* save,const string& home,const string& filename){
     fs::path save_path;
-    fs::path file_in_working_folder = fs::path(home)/room / "file_test_if_Exists.txt"; 
+    fs::path file_in_working_folder = fs::path(home)/ "file_test_if_Exists.txt"; 
     fs::create_directories(file_in_working_folder.parent_path());
-    save_path=fs::path(home) /room/ filename;
+    save_path=fs::path(home)/ filename;
     sleep_2(2)
     std::ofstream file(save_path.string());
     if (file.is_open()) {
         file << save->dump(4);
         file.close();
-        return string(SUCCESS_COLOR)+"Succeed Caching "+home+"/"+room+"/"+filename+string(COLOR_RESET)+"\n";
+        return string(SUCCESS_COLOR)+"Succeed Caching "+home+"/"+filename+string(COLOR_RESET)+"\n";
     }
-    return string(WARN_COLOR)+"Failed saving to "+home+"/"+room+"/"+filename+string(COLOR_RESET)+"\n";
+    return string(WARN_COLOR)+"Failed saving to "+home+"/"+filename+string(COLOR_RESET)+"\n";
 }
 
 string sagtlib::Agent::load_ex() {
@@ -141,10 +141,9 @@ string sagtlib::Agent::load_ex() {
 
 string sagtlib::Agent::load_cf(){
     {//the Model setup
-        json data=handle_read_json(build_path(build_path(this->home,this->room),"profile.json"));//build the home/room/profile.json path and read file
+        json data=handle_read_json(build_path(this->home,"profile.json"));//build the home/room/profile.json path and read file
         this->profile.api = (data.contains("APIKEY")?data["APIKEY"]:"");
         this->profile.extension_env=(data.contains("extension")?data["extension"]:"");
-        this->profile.name = this->room;
         this->profile.tool_choice = (data.contains("tool_choice")?data["tool_choice"]:"auto");
         //this->profile.whoyouare = (data.contains("whoyouare")?data["whoyouare"]:"you are a helpful AI Assistant");
         try{
@@ -183,10 +182,11 @@ string sagtlib::Agent::load_cf(){
             {"role","system"},
             {"content",(
                 "**your name**:"+this->profile.name+\
-                "\n **who you are**:"+read_as_string(build_path(build_path(this->home,this->room),"IDENTITY.md"))+\
+                "\n **who you are**:"+read_as_string(build_path(this->home,"IDENTITY.md"))+\
                 "\n **General RULE**:"+read_as_string(build_path(this->home,"RULE.md"))+\
-                "\n **your Additional RULE**:"+read_as_string(build_path(build_path(this->home,this->room),"SUBRULE.md"))
-            )}
+                "\n **your Additional RULE**:"+read_as_string(build_path(this->home,"SUBRULE.md"))
+            )
+            }
         });
     
     }
@@ -202,10 +202,10 @@ string sagtlib::Agent::load_ch(const string& option){
     }catch(const exception e){
         choice=-23;
     }
-    string I=handle_get_history(this->home,this->room,choice);
+    string I=handle_get_history(this->home,choice);
     if(I[0]=='\n')return I;
     json data=handle_read_json(
-        build_path(build_path(this->home,this->room),I)
+        build_path(this->home,I)
     );
     if(data.empty())return "cant use this file as reload chat\n";
     this->message_pool=data;
@@ -216,7 +216,7 @@ string sagtlib::Agent::save(const string& choice){
     json save;
     if(choice=="h"){//save chat history
         save=this->message_pool;
-        return handle_save(&save,this->home,this->room,(get_time()+"chat.json"));
+        return handle_save(&save,this->home,(get_time()+"chat.json"));
     }
     else if(choice=="p"){//save config
         //save["whoyouare"]=this->profile.whoyouare;
@@ -232,7 +232,7 @@ string sagtlib::Agent::save(const string& choice){
         save["tool_choice"]=this->profile.tool_choice;
         save["local_socket"]=this->profile.local_llm_socket;
         save["extension"]=this->profile.extension_env;
-        return handle_save(&save,this->home,this->room,"profile.json");
+        return handle_save(&save,this->home,"profile.json");
     }else return MES_1_10
 }
 

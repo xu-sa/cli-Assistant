@@ -9,11 +9,7 @@
 #include "vector"
 #include "../api/sagtapi.h"
 #include "../data/sydata.h"
-#ifdef _WIN32
-#include "../../lib-w/json/json.hpp"
-#else
-#include "../../lib-l/json/json.hpp"
-#endif
+#include "../../lib/json/json.hpp"
 #define sleep_2(s) std::this_thread::sleep_for(std::chrono::milliseconds(100*s));
 #define INPUT_POOL_SIZE 10
 #define CURRENT this->profile
@@ -35,8 +31,8 @@ struct SKILL{
     nlohmann::json definition;//the standard json format definition for LLM function calling
     std::function<std::string(const std::string*)> fuc;//the c++ function that is Compiled and will be called Directly when tool is been called
     std::vector<std::string> parameter_format;//Unify the parameter format for different skill
-    std::string type;
-    bool state;//activate the function or not
+    std::string type;//whether the skill is a native() or a plug-in()
+    bool state;//whether the skill is activated or not
 };
 
 struct Model_setup{
@@ -44,15 +40,15 @@ struct Model_setup{
     std::string api;
     int provider;//LLM provider
     int model;//LLM model,Varies from provider
-    int openroute_model;
-    int local_llm_socket;
+    int openroute_model;//will be used when provider is openroute
+    int local_llm_socket;//will override all model setting,need a Compatible API key from llama 
     int max_tokens;//token limites the costs
     bool stream;//stream output/NOT AVAILABLE YET
     float temperature;//temperature to make LLM speak within a Concentrated or Deviated mind 
     float top_p;//Percentage limitation for the Sum of top Possible output characters
     size_t max_message;//how many meesages will be stored
-    std::string tool_choice;//Manage single tool Validity
-    std::string extension_env;
+    std::string tool_choice;//Manage tool Validity
+    std::string extension_env;//the path to the extension CLI tools
 };
 
 namespace sagtlib{
@@ -60,17 +56,17 @@ namespace sagtlib{
     {
     public:
         //stage 0
-        Agent(const std::string &home, const std::string &room);//home/room would be used as workspace Folder,where room is the name of agent instance
+        Agent(const std::string &home, const std::string &name);//home would be used as workspace Folder,where name is the name of agent instance
         ~Agent();
         void register_tool(const std::string definition_[][5], size_t, std::function<std::string(const std::string *)>) override;
         std::string get_skills(const std::string*);
-        std::string activate_tool(const std::string*);
+        std::string activate_tool(const std::string*);//agent callback function
         nlohmann::json run_tool(SKILL*, nlohmann::json *);//run tool
         std::string send();//send message 
         //stage 1
         std::string load_cf();//load config from home/room/ , would not reload chat history
         std::string load_ch(const std::string&);//to load cached chat from workspace
-        std::string load_ex();//to load python skill from extension folder
+        std::string load_ex();//to load plug-in skills from extension folder
         std::string save(const std::string &choice);//to save whether config or chat history to home/room/
         //stage 2
         void push_input(int socket,const std::string& client_id,const std::string& text,const std::string& image) override;//to add a new message to prepare for handling
@@ -102,7 +98,6 @@ namespace sagtlib{
         int queued_input;
         int socket_num;
         std::string home;
-        std::string room;
         std::mutex input_mutex;  
         std::thread main_thread; 
         std::thread server_thread;

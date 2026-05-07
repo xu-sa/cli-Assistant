@@ -38,7 +38,7 @@
 # else()
 #     message(FATAL_ERROR "Static curl library not found in ${LIB_DIR}/curl/lib")
 # endif()
-
+set(LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../lib)
 add_library(SYagent STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/file/util_parse_file.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/main/utils_1.cpp
@@ -51,62 +51,64 @@ add_library(SYagent STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/api/interface.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/local_tool/cli_tool.cpp
 )
-
-target_include_directories(SYagent PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/data
-    ${CMAKE_CURRENT_SOURCE_DIR}/utils
-    ${CMAKE_CURRENT_SOURCE_DIR}/agent
-    ${CMAKE_CURRENT_SOURCE_DIR}/api
-    ${CMAKE_CURRENT_SOURCE_DIR}/local_tool
-)
-
-if(WIN32)
-    target_include_directories(SYagent PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/../lib-w/json
-        ${CMAKE_CURRENT_SOURCE_DIR}/../lib-w/curl/include
-    )
-else()
-    target_include_directories(SYagent PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/../lib-l/json
-        ${CMAKE_CURRENT_SOURCE_DIR}/../lib-l/curl/include
-    )
-endif()
+# if(WIN32)
+    
+# else()
+    
+# endif()
 
 target_precompile_headers(SYagent PRIVATE
     <string>
     <vector>
 )
-
 target_compile_features(SYagent PUBLIC cxx_std_17)
 
-# target_link_libraries(SYagent PRIVATE ${CURL_LIBRARIES})
+
 
 if(WIN32)
-target_link_libraries(SYagent PRIVATE 
-        ws2_32#provide windows socket
-        wldap32#provide ldap
-        advapi32#provide advanced api
-        crypt32#provide crypto
-        iphlpapi#provide ip helper api
-        normaliz#provide normalization api
-        bcrypt#provide bcrypt for random number generation
-        secur32#provide secur32 for SSPI
-)
-
-set_target_properties(SYagent PROPERTIES
-    OUTPUT_NAME "sagentw"
-    VERSION 1.0.5
-    SOVERSION 1
-)
+    target_include_directories(SYagent PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/data
+        ${CMAKE_CURRENT_SOURCE_DIR}/utils
+        ${CMAKE_CURRENT_SOURCE_DIR}/agent
+        ${CMAKE_CURRENT_SOURCE_DIR}/api
+        ${CMAKE_CURRENT_SOURCE_DIR}/local_tool
+        ${CMAKE_CURRENT_SOURCE_DIR}/../lib/json
+        ${CMAKE_CURRENT_SOURCE_DIR}/../lib/Wcurl/include
+    )
+    find_library(CURL_STATIC_LIB NAMES curl libcurl PATHS ${LIB_DIR}/Wcurl/lib NO_DEFAULT_PATH)
+    set(CURL_LIBRARIES ${CURL_STATIC_LIB})
+    target_link_libraries(SYagent PRIVATE
+            ${CURL_LIBRARIES} 
+            ws2_32#provide windows socket
+            wldap32#provide ldap
+            advapi32#provide advanced api
+            crypt32#provide crypto
+            iphlpapi#provide ip helper api
+            normaliz#provide normalization api
+            bcrypt#provide bcrypt for random number generation
+            secur32#provide secur32 for SSPI
+    )
+    set_target_properties(SYagent PROPERTIES
+        OUTPUT_NAME "sagentw"
+        VERSION 1.0.5
+        SOVERSION 1
+    )
 else()
-set_target_properties(SYagent PROPERTIES
-    OUTPUT_NAME "sagentl"
-    VERSION 1.0.5
-    SOVERSION 1
-)
+    target_include_directories(SYagent PUBLIC
+            ${CMAKE_CURRENT_SOURCE_DIR}/data
+            ${CMAKE_CURRENT_SOURCE_DIR}/utils
+            ${CMAKE_CURRENT_SOURCE_DIR}/agent
+            ${CMAKE_CURRENT_SOURCE_DIR}/api
+            ${CMAKE_CURRENT_SOURCE_DIR}/local_tool
+            ${CMAKE_CURRENT_SOURCE_DIR}/../lib/json
+            ${CMAKE_CURRENT_SOURCE_DIR}/../lib/Lcurl/include
+        )
+    set_target_properties(SYagent PROPERTIES
+        OUTPUT_NAME "sagentl"
+        VERSION 1.0.5
+        SOVERSION 1
+    )
 endif()
-
-
 
 set(INSTALL_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../test/lib)
 

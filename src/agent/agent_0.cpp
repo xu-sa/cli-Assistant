@@ -45,20 +45,21 @@ static json parse_definition(const string definition_[][5],size_t amount,vector<
     try{
         vector<string> required;
         json properties;
-        for(size_t sz=1;sz<amount;sz++){
+        if(amount>1)for(size_t sz=1;sz<amount;sz++){
             if(definition_[sz][0]=="1")required.push_back(definition_[sz][1]);
             properties[definition_[sz][1]]={{"type",definition_[sz][2]},{"description",definition_[sz][3]}};
             if(definition_[sz][4]!=""){
                 vector<string> enum_;
                 stringstream ss(definition_[sz][4]);
                 string choice;
-                while (ss >> choice) {
-                    enum_.push_back(choice);
-                }
-            properties[definition_[sz][1]]["enum"]=enum_;
+                while (ss >> choice) enum_.push_back(choice);
+                properties[definition_[sz][1]]["enum"]=enum_;
             };
             parameter_format->push_back(definition_[sz][1]);    
-        };
+        }else{
+            properties["p1"]={{"type",STRING_PARAMETER},{"description","this is a auto-generated parameter which doesnt effect anything"}};
+
+        }
         definition={
             {"type","function"},
             {"function",{
@@ -242,7 +243,7 @@ string sagtlib::Agent::send(){
     else return MES_0_4
 }
 
-sagtlib::Agent::Agent(const string& home,const string& room):home(home),room(room){
+sagtlib::Agent::Agent(const string& home,const string& name):home(home){
     {//preconfig
         this->port_num=-1;
         this->socket_num=-1;//will be distributed by system kernel 
@@ -251,6 +252,8 @@ sagtlib::Agent::Agent(const string& home,const string& room):home(home),room(roo
         this->push_out=0;
         this->queued_input=0;
     }
+    this->profile.name = name;
+
     cout<<this->load_cf();
     this->start_main_thread();
 }

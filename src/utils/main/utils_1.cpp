@@ -1,11 +1,10 @@
 #include <iostream>
 #include <fstream>
+#include "../../../lib/json/json.hpp"
 #ifdef _WIN32
-#include "../../../lib-w/json/json.hpp"
     #include <windows.h>
     #define sleep_1 Sleep(300);
 #else
-#include "../../../lib-l/json/json.hpp"
     #include <unistd.h>
     #define sleep_1 usleep(300 * 1000);
 #endif

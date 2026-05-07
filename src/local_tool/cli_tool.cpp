@@ -11,7 +11,11 @@
 #endif
 #define PRINT_ERROR std::cout<<"Unexpected Error Occurred : 10";
 #define MAX_TOOL_OUTPUT 1024*2
-std::string agent_home="";
+#ifdef _WIN32
+std::string terminal_path="C:\\";
+#else
+std::string terminal_path="/";
+#endif
 static char buffer[512]={0};
 using namespace std;
  
@@ -19,9 +23,9 @@ string terminal_tool(const string* data) {//1
     string result = "";
     string cmd = data[0];
     #ifndef _WIN32
-    cmd = "cd "+agent_home+" && (" + cmd + ") 2>&1";
+    cmd = "cd "+terminal_path+" && (" + cmd + ") 2>&1";
     #else
-    cmd = "cd /d "+agent_home+" && " + cmd;
+    cmd = "cd /d "+terminal_path+" && " + cmd;
     #endif
     FILE* pipe = POPEN(cmd.c_str(), "r");
     if (!pipe) return "Error: Failed to open pipe.";
@@ -41,7 +45,7 @@ string terminal_tool(const string* data) {//1
             else result+=buffer;
         }
     }
-    u_int8_t exit_code = PCLOSE(pipe);
+    int exit_code = PCLOSE(pipe);
     if (exit_code != 0)result += "\n[Process exited with code: " + to_string(exit_code) + "]";
     return result.empty() ? "Command executed with no output" : result;
 };
@@ -65,3 +69,7 @@ std::string tool_3(const std::string* data){
     
     return "return from tool_3";
 };
+std::string change_dir(const std::string* dir){
+    terminal_path=dir[0];
+    return "agent workpath changed to "+dir[0];
+}
