@@ -6,7 +6,7 @@
 #define BOOL_PARAMETER "boolean"
 #define OBJECT_PARAMETER "object"
 #define NULL_PARAMETER "null"
-#define DEFINE_TOOL(Toolname,description,...) std::string Toolname[][5]={{#Toolname,description,"","",""},__VA_ARGS__};// to define a tool from a Customized function with any discription and parameter definition.
+#define DEFINE_TOOL(Toolname,description,...) std::string Toolname[][5]={{#Toolname,description,"self","",""},__VA_ARGS__};// to define a tool from a Customized function with any discription and parameter definition.
 #define REGISTER_TOOL(Agent,Definition,Tool) Agent->register_tool(Definition,sizeof(Definition)/sizeof(Definition[0]),Tool);// register the pre-defined tools in DEFINE_TOOL.
 
 #include <string>

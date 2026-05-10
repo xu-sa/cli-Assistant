@@ -2,6 +2,7 @@
 #include "cli_tool.h"
 #include "string.h"
 #include "../utils/main/utils_1.h"
+
 #ifdef _WIN32
     #define POPEN _popen
     #define PCLOSE _pclose
@@ -18,13 +19,13 @@ std::string terminal_path="/";
 #endif
 static char buffer[512]={0};
 using namespace std;
- 
 
 string terminal_tool(const string* data) {//1
+    // printf("Running command\n");
     string result = "";
     string cmd = data[0];
     #ifndef _WIN32
-    cmd = "cd "+terminal_path+" && (" + cmd + ") 2>&1";
+    cmd = "cd "+terminal_path+" && "+ cmd ;
     #else
     cmd = "cd /d "+terminal_path+" && " + cmd;
     #endif
@@ -47,7 +48,7 @@ string terminal_tool(const string* data) {//1
         }
     }
     int exit_code = PCLOSE(pipe);
-    if (exit_code != 0)result += "\n[Process exited with code: " + to_string(exit_code) + "]";
+    if (exit_code != 0)result += "\n[Process exited with Code: " + to_string(exit_code) + "]";
     return result.empty() ? "Command executed with no output" : result;
 };
 
@@ -62,7 +63,8 @@ string external_tool(const string* data) {
     if (data[0] == "py")cmd =P(P(P(data[3],"venv"),"bin"),"python3 ") + filepath + ".py '" + data[2] + "'";
     else if (data[0] == "sh")cmd = "bash " +filepath+ ".sh '" + data[2] + "'";
     else if (data[0] == "bin")cmd = "./"+filepath + " \"" + data[2] + "\"";
-    else return "Error code: 10";
+    else return "Error Code 10";
+    // printf("%s\n",cmd.c_str());
     return terminal_tool(&cmd);
 }
 std::string change_dir(const std::string* dir){

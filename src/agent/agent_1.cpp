@@ -145,7 +145,6 @@ string sagtlib::Agent::load_cf(){
         this->profile.api = (data.contains("APIKEY")?data["APIKEY"]:"");
         this->profile.extension_env=(data.contains("extension")?data["extension"]:"");
         this->profile.tool_choice = (data.contains("tool_choice")?data["tool_choice"]:"auto");
-        //this->profile.whoyouare = (data.contains("whoyouare")?data["whoyouare"]:"you are a helpful AI Assistant");
         try{
             this->profile.temperature = (data.contains("temperature") ? (float)data["temperature"] : 0.7f);
             this->profile.top_p = (data.contains("top_p") ? (float)data["top_p"] : 0.8f);

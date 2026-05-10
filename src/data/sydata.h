@@ -6,8 +6,7 @@
 #define LOCAL_USER "super user"
 #define COLOR_RESET   "\033[0m"
 #define TOOL_FAILED_LIM 3
-#define TOOL_CALL_LIM 10
-#define TERMINAL_CALL_LIM 6
+#define TOOL_CALL_LIM 6
 // 前景色
 #define COLOR_BLACK   "\033[30m"
 #define COLOR_RED     "\033[31m"
@@ -42,7 +41,7 @@
 
 #define MES_0_0 std::cout<<"updated tool "<<definition["function"]["name"]<<"\n";
 #define MES_0_1 std::cout<<SUCCESS_COLOR<<"Registered tool "<<COLOR_RESET<<tool_size<<": "<<definition["function"]["name"]<<" "<<(new_skill.state?"+":"-")<<"\n";
-#define MES_0_2 string(INFO_COLOR)+"(calling tool)"+this->profile.name+string(COLOR_RESET)+string(" : ")+(message_reply.empty()?"..":message_reply);
+#define MES_0_2 std::string(INFO_COLOR)+"(calling tool)"+this->profile.name+string(COLOR_RESET)+" : "+(message_reply.empty()?"..":message_reply);
 #define MES_0_3 string(ERROR_COLOR)+"LLM error"+string(COLOR_RESET)+" : "+to_string(agent_reply["code_"])+" #type:"+to_string(agent_reply["error_type"])+" #message:"+to_string(agent_reply["error_message"]);
 #define MES_0_4 string(SUCCESS_COLOR)+this->profile.name+string(COLOR_RESET)+" : "+(message_reply.empty()?"..":message_reply);
 #define MES_0_6 std::cout<<"agent service terminated..\n";
@@ -52,8 +51,8 @@
 #define MES_1_2 std::cout<<WARN_COLOR<<"Error: tool must have the same name as it's folder in the definition"<<COLOR_RESET<<"\n";
 #define MES_1_3 std::cout<<WARN_COLOR<<"Error: skill type is rather undefined ,no-marching or incorrect"<<COLOR_RESET<<"\n";
 #define MES_1_4 std::cout<<WARN_COLOR<<"Error Occurred when registering tool '"<<folderName<<"' : "<<e.what()<<COLOR_RESET<<"\n";
-#define MES_1_5 string(WARN_COLOR)+"Error accessing extension Folder(you may need to Configure the extension path): "+string(COLOR_RESET)+ string(e.what())+"\n";
-#define MES_1_6 string(SUCCESS_COLOR)+"Loaded agent "+""+this->profile.name+string(COLOR_RESET)+"\n";
+#define MES_1_5 std::string(WARN_COLOR)+"Error accessing extension Folder(you may need to Configure the extension path): "+string(COLOR_RESET)+ string(e.what())+"\n";
+#define MES_1_6 std::string(SUCCESS_COLOR)+"Loaded agent "+""+this->profile.name+string(COLOR_RESET)+"\n";
 #define MES_1_7 "Reloaded chat history : "+I+"\n";
 
 
@@ -70,7 +69,10 @@
 #define MES_2_8 "server thread shut down..\n";
 #define MES_2_9 "server is not been Activated yet..cant join a unjoinable thread\n";
 #define MES_2_10 std::cout<<"agent "<<this->profile.name<<"'s main thread is terminated\n";
-#define MES_4_0 std::cout << "got one client connecting to socket " << socket_in << "\n";
+
+#define MES_4_1 std::string(INFO_COLOR)+"Agent wants to Proceed on Executing tool, Approve and add some more details or Reject(N)?: "+std::string(COLOR_RESET)
+
+#define MES_4_0 std::cout << "got one client connecting to socket " << fd_in << "\n";
 
 #include <string>
 

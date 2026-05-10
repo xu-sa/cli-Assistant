@@ -13,18 +13,19 @@
 #define sleep_2(s) std::this_thread::sleep_for(std::chrono::milliseconds(100*s));
 #define INPUT_POOL_SIZE 10
 #define CURRENT this->profile
-
+ 
 struct agent_input{
     std::string message;//message
     std::string image;//leave empty for no image input
     std::string client_id;//to identify which channel and which person is sending message to LLM
+    int client_fd;
     //if -1 ,send to terminal;
     //if -2 ,send to discord;
     //if -3 ,send to telegram;
     //if -4 ,send to wechat;
     //if -5 ,send to qq; 
     //if >0 ,send to Corresponding socket
-    int client_socket;
+    
 };  
 
 struct SKILL{
@@ -59,9 +60,9 @@ namespace sagtlib{
         Agent(const std::string &home, const std::string &name);//home would be used as workspace Folder,where name is the name of agent instance
         ~Agent();
         void register_tool(const std::string definition_[][5], size_t, std::function<std::string(const std::string *)>) override;
-        std::string get_skills(const std::string*);
+        std::string get_plugin(const std::string*);
         std::string activate_tool(const std::string*);//agent callback function
-        nlohmann::json run_tool(SKILL*, nlohmann::json *);//run tool
+        std::string run_tool(SKILL*, nlohmann::json *);//run tool
         std::string send();//send message 
         //stage 1
         std::string load_cf();//load config from home/room/ , would not reload chat history
@@ -82,21 +83,22 @@ namespace sagtlib{
         std::string attach_file(const std::string&);//to attach a file in the next message
         std::string config(const std::string&);//set config 
         //stage 4
-        void respond_socket(const std::string&,int,int);
+        std::string interupt();//this intercept the agent functioncall to give user options whether agent should go on or stop executing 
+        void respond_socket(const std::string&,int,int);//data to send, data type(-1,0,1)/(end,start,continue), target fd
         void start_server();//start server and bind on a specified port
         void stop_server();//stop server
         void listen_server();//loop to wait and handle port Requests
         agent_input input_pool[INPUT_POOL_SIZE];
-        int push_in;
-        int push_out;
+        int push_in;//this indicates the last input 
+        int push_out;//this indicates the last handled input
         std::deque<nlohmann::json> message_pool;//all the mssages
-        int chat_state;
+        int chat_state;//this Controls the ongoing agent task terminates or keeps on. 
         std::vector<SKILL> SKILLs;        
         bool on;
     private:
         Model_setup profile;//a Structure Containing all the configs of LLM
         int queued_input;
-        int socket_num;
+        int socket_fd;
         std::string home;
         std::mutex input_mutex;  
         std::thread main_thread; 

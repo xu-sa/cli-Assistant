@@ -42,7 +42,7 @@ static string help_model(int i){
     for(int ii=0;ii<5;ii++)if(!models[i][ii].empty())I+="    "+to_string(ii)+". "+models[i][ii]+"\n";
     return I;
 }
-
+static void handle_send(sagtlib::Agent* a);
 static int handle_command(sagtlib::Agent* a,int socket_){
     string command ,value;
     {
@@ -63,6 +63,7 @@ static int handle_command(sagtlib::Agent* a,int socket_){
                 cout<<a->attach_file(filepath);//this->input_pool[this->push_out].image handled
                 a->input_pool[a->push_out].message=value.substr(fileend+1);
             }else a->input_pool[a->push_out].message=value;
+            handle_send(a);
             return -1;
         }//only for terminal
         else if(command=="/serveron")cout<<a->start_server_thread(value);//only for terminal
@@ -75,40 +76,42 @@ static int handle_command(sagtlib::Agent* a,int socket_){
         else cout<<help_message_1<<help_message_2;
     }
     else if(socket_>=4){
-        a->respond_socket("",0,socket_);//start socket
         if(command=="/save")a->respond_socket(a->save(value),1,socket_);
         else if(command=="/loadp")a->respond_socket(a->load_cf( ),1,socket_);
         else if(command=="/loadh")a->respond_socket(a->load_ch(value),1,socket_);
         else if(command=="/loade")a->respond_socket(a->load_ex( ),1,socket_);
         else if(command=="/config")a->respond_socket(a->config(value),1,socket_);
         else a->respond_socket(help_message_1,1,socket_);
-       
-        a->respond_socket("",-1,socket_);//close socket
+        a->respond_socket("",0,socket_);//close socket
     }
     else PRINT_ERROR
     return 0;
 
 }
 
-static void handle_send(sagtlib::Agent* a,int to_send){
+static void handle_send(sagtlib::Agent* a){
     if(a->input_pool[a->push_out].image[0]=='d'){//there is a image attached 
         json content=json::array();
-        content.push_back({{"type","text"},{"text",a->input_pool[a->push_out].client_id+": "+a->input_pool[a->push_out].message}});
+        content.push_back({{"type","text"},{"text",a->input_pool[a->push_out].client_fd+": "+a->input_pool[a->push_out].message}});
         content.push_back({{"type", "image_url"},{ "image_url",{{"url",a->input_pool[a->push_out].image}}}});//data:image/png;base64,iVBO.....
         a->message_pool.push_back({{"role","user"},{"content",content}});
     }
-    else a->message_pool.push_back({{"role","user"},{"content",a->input_pool[a->push_out].client_id+": "+a->input_pool[a->push_out].message}});
-    if(to_send==1){//send to socket
-        a->respond_socket("",0,a->input_pool[a->push_out].client_socket);//start socket
-        a->respond_socket(a->send()+"\n",1,a->input_pool[a->push_out].client_socket);
-        while (a->chat_state!=1)a->respond_socket(a->send()+"\n",1,a->input_pool[a->push_out].client_socket);
-        a->respond_socket("",-1,a->input_pool[a->push_out].client_socket);//close socket
-    }
-    else{//send to terminal
+    else a->message_pool.push_back({{"role","user"},{"content",a->input_pool[a->push_out].client_fd+": "+a->input_pool[a->push_out].message}});
+    switch (a->input_pool[a->push_out].client_fd)
+    {
+    case -1:
         cout<<a->send()<<endl;
         while (a->chat_state!=1)cout<<a->send()<<endl;
+        break;
+    default:
+        // a->respond_socket(a->send()+"\n",1,a->input_pool[a->push_out].client_fd);
+        a->chat_state=0;
+        while (a->chat_state!=1)a->respond_socket(a->send()+"\n",1,a->input_pool[a->push_out].client_fd);
+        a->respond_socket("",0,a->input_pool[a->push_out].client_fd);//close socket
+        break;
     }
 }
+
 
 void sagtlib::Agent::terminalsession(bool a){//start a terminal session for chating
     string input;
@@ -126,16 +129,13 @@ void sagtlib::Agent::terminalsession(bool a){//start a terminal session for chat
 }
 
 void sagtlib::Agent::handle_input(){
-    int socket_=this->input_pool[this->push_out].client_socket;
-    int to_send=0;
-    
-    if(this->input_pool[this->push_out].message[0] == '/')to_send=handle_command(this,socket_);
-    else if(socket_>=4)to_send=1;
+    int socket_=this->input_pool[this->push_out].client_fd;
+    if(this->input_pool[this->push_out].message[0] == '/')handle_command(this,socket_);
+    else if(socket_>=4){
+        handle_send(this);
+    }
     else if(socket_==-1)cout<<"unknown input, please use '/' for Instructions"<<endl;
     else PRINT_ERROR;
-    if(to_send==0)return;
-   
-    handle_send(this,to_send);
 }
 
 string sagtlib::Agent::attach_file(const std::string& path){
