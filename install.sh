@@ -9,25 +9,33 @@ INSTALL_DIR="$HOME/.local/share/syagent"
 CONFIG_DIR=$INSTALL_DIR
 LOG_DIR="$INSTALL_DIR/logs"
 SYSTEMD_USER_DIR="$HOME/.config/systemd/user"
+VERSION="1.0.8"
 BINARY_NAME="syagent"
+BINARY_NAME_="schat"
 AGENT_NAME="linux-bot"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BINARY_PATH="$SCRIPT_DIR/test/bin/$BINARY_NAME"
- 
- 
-
+BINARY_A="$SCRIPT_DIR/build/bin/$BINARY_NAME-$VERSION"
+BINARY_B="$SCRIPT_DIR/build/bin/$BINARY_NAME_-$VERSION"
+PORT=9995
 check_binary() {
     echo -e "${YELLOW}checking file...${NC}"
     
-    if [ ! -f "$BINARY_PATH" ]; then
-        echo -e "${RED}ERROR: not found $BINARY_PATH${NC}"
+    if [ ! -f "$BINARY_A" ]; then
+        echo -e "${RED}ERROR: not found $BINARY_A${NC}"
+        exit 1
+    fi
+    if [ ! -f "$BINARY_B" ]; then
+        echo -e "${RED}ERROR: not found $BINARY_B${NC}"
         exit 1
     fi
     
-    if [ ! -x "$BINARY_PATH" ]; then
-        chmod +x "$BINARY_PATH"
+    if [ ! -x "$BINARY_A" ]; then
+        chmod +x "$BINARY_A"
     fi
     
+    if [ ! -x "$BINARY_B" ]; then
+        chmod +x "$BINARY_B"
+    fi
     echo -e "${GREEN}✓ Binary checking passed ${NC}"
 }
 create_directories() {
@@ -42,10 +50,14 @@ create_directories() {
 }
 copy_files() {
     echo -e "${YELLOW}copying...${NC}"
-
-    cp "$BINARY_PATH" "$INSTALL_DIR/"
     
+    touch "$INSTALL_DIR/$BINAR_NAME"
+    cp "$BINARY_A" "$INSTALL_DIR/$BINARY_NAME"
     chmod +x "$INSTALL_DIR/$BINARY_NAME"
+
+    touch "$HOME/.local/bin/$BINARY_NAME_"
+    cp "$BINARY_B" "$HOME/.local/bin/$BINARY_NAME_"
+    chmod +x "$HOME/.local/bin/$BINARY_NAME_"
     
     echo -e "${GREEN}✓ copied binary${NC}"
 }
@@ -60,7 +72,7 @@ Description = a efficient terminal assistant
 Type=simple
 User=$USER
 WorkingDirectory=$INSTALL_DIR
-ExecStart=$INSTALL_DIR/$BINARY_NAME $HOME/ $AGENT_NAME 9995
+ExecStart=$INSTALL_DIR/$BINARY_NAME $HOME/ $AGENT_NAME $PORT
 # Environment="CONFIG_DIR=$CONFIG_DIR"
 # Environment="LOG_DIR=$LOG_DIR"
 
@@ -68,8 +80,8 @@ Restart=no
 StartLimitInterval=60
 StartLimitBurst=5
 
-StandardOutput=append:$LOG_DIR/syagent.log
-StandardError=append:$LOG_DIR/syagent-error.log
+StandardOutput=append:$LOG_DIR/.syagent.log
+StandardError=append:$LOG_DIR/.syagent-error.log
 SyslogIdentifier=$SERVICE_NAME
  
 MemoryLimit=100M
@@ -112,14 +124,14 @@ start_service() {
     fi
 }
 setup_workspace(){
-    mkdir -p "$HOME/.slcache"
-    mkdir -p "$HOME/.slcache/$AGENT_NAME"
-    cp ./assets/RULE.md "$HOME/.slcache/"
-    cp ./assets/IDENTITY.md "$HOME/.slcache/$AGENT_NAME/"
-    cp ./assets/SUBRULE.md "$HOME/.slcache/$AGENT_NAME/"
+    mkdir -p "$HOME/.syagent"
+    mkdir -p "$HOME/.syagent/$AGENT_NAME"
+    cp ./assets/RULE.md "$HOME/.syagent/"
+    cp ./assets/IDENTITY.md "$HOME/.syagent/$AGENT_NAME/"
+    cp ./assets/SUBRULE.md "$HOME/.syagent/$AGENT_NAME/"
     
-    EXTENSION_DIR="$HOME/.slcache/.extension"
-    echo "Workspace created at: $HOME/.slcache"
+    EXTENSION_DIR="$HOME/.syagent/.extension"
+    echo "Workspace created at: $HOME/.syagent"
     
     mkdir -p "$EXTENSION_DIR"
     python3 -m venv "$EXTENSION_DIR/venv"
@@ -144,13 +156,12 @@ setup_workspace(){
 }
 main() {
     echo -e "${GREEN}start to install Syagent user service...${NC}"
-    echo ""
     setup_workspace
     check_binary
     create_directories
     copy_files
     create_service_file
-
+    echo "Service start On port $PORT"
     setup_systemd
     start_service
 }   
