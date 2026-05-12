@@ -36,7 +36,7 @@ static char buffer2[BUF_SIZE2];
 static uint64_t ofs2=0;
 
 static void send_tcp_chunk(int fd,const char* data,uint64_t sz){
-    uint8_t bf1[8]={0};
+    char bf1[8]={0};
     char bf2[1250]={0};
     uint64_t offset=0;
     uint64_t sz2=0;
@@ -62,7 +62,7 @@ static void send_tcp_chunk(int fd,const char* data,uint64_t sz){
 }
 
 static void recv_tcp_chunk(int fd,char* data,uint64_t* sz_read){
-    uint8_t bf1[8];
+    char bf1[8];
     recv(fd,bf1,8,0);
     uint64_t sz=0;
     for (int i = 0; i < 8; i++)
