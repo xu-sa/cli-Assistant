@@ -1,8 +1,11 @@
 # cli-Assistant
-a ai PC agent, Designed to help Improve Efficiency working on command line Interface.
 
-#what it does?
+a ai PC agent, Designed to Fully Guide you into command line interface. 
+
+# what it does?
+
 Encountering Enormous commands with tons of parameters or wanting to use some System Configuration files but having Trouble finding a proper Tutorial and not knowing how to Describe your PC Setup to ai? this Tool Handles it all.
+
 fix your typing , give notifications about commands , write codes, check system Available Resources/Apps.
 All done within Command line interface, you need no GUI apps for help.(Extremely helpful for linux starter)
 
