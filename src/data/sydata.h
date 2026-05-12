@@ -4,10 +4,12 @@
 #define MODEL_OPTION 5
 #define OPEN_ROUTE_SIZE sizeof(models_open_router) / sizeof(models_open_router[0])
 #define LOCAL_USER "super user"
-#define COLOR_RESET   "\033[0m"
+
 #define TOOL_FAILED_LIM 3
 #define TOOL_CALL_LIM 6
-// 前景色
+
+#ifndef _WIN32
+#define COLOR_RESET   "\033[0m"
 #define COLOR_BLACK   "\033[30m"
 #define COLOR_RED     "\033[31m"
 #define COLOR_GREEN   "\033[32m"
@@ -17,7 +19,6 @@
 #define COLOR_CYAN    "\033[36m"
 #define COLOR_WHITE   "\033[37m"
 
-// 背景色
 #define BG_BLACK   "\033[40m"
 #define BG_RED     "\033[41m"
 #define BG_GREEN   "\033[42m"
@@ -27,17 +28,25 @@
 #define BG_CYAN    "\033[46m"
 #define BG_WHITE   "\033[47m"
 
-// 属性
 #define BOLD        "\033[1m"
 #define UNDERLINE   "\033[4m"
 #define REVERSED    "\033[7m"
-
-// 常用组合
+ 
 #define ERROR_COLOR   COLOR_RED BOLD
 #define WARN_COLOR    COLOR_YELLOW BOLD
 #define INFO_COLOR    COLOR_CYAN BOLD
 #define SUCCESS_COLOR COLOR_GREEN BOLD
 #define BLUE_BOLD COLOR_BLUE BOLD
+#else
+#define COLOR_YELLOW ""
+#define COLOR_RED ""
+#define COLOR_RESET ""
+#define ERROR_COLOR   ""
+#define WARN_COLOR    ""
+#define INFO_COLOR    ""
+#define SUCCESS_COLOR ""
+#define BLUE_BOLD ""
+#endif
 
 #define MES_0_0 std::cout<<"updated tool "<<definition["function"]["name"]<<"\n";
 #define MES_0_1 std::cout<<SUCCESS_COLOR<<"Registered tool "<<COLOR_RESET<<tool_size<<": "<<definition["function"]["name"]<<" "<<(new_skill.state?"+":"-")<<"\n";
