@@ -1,24 +1,29 @@
 # cli-Assistant
-a ai tool Designed to help Improve Efficiency working on command line Interface
+a ai PC agent, Designed to help Improve Efficiency working on command line Interface.
 
-# Main Feature:
-0:purely done in C++, Support windows and linux, nearly none cpu costs, totally 3Mb memory cost on Average
+#what it does?
+Encountering Enormous commands with tons of parameters or wanting to use some System Configuration files but having Trouble finding a proper Tutorial and not knowing how to Describe your PC Setup to ai? this Tool Handles it all.
+fix your typing , give notifications about commands , write codes, check system Available Resources/Apps.
+All done within Command line interface, you need no GUI apps for help.(Extremely helpful for linux starter)
 
-1:extension system Available , create a c++ function or a External script , and Register as a tool. 
+# Main Feature
 
-2:work as both Server and client application
+1:purely done in C/CPP, Support windows and linux,run as a BG service, run Senselessly, nearly none cpu/memory costs
 
-3:send Multiple types of file via termial 
+2:extension system Available , create a c++ function or a External script , and Register as a tool.
 
-# Prerequisite: nlohmann::json & curl (all Available in the lib folder)
+3:work as both Server and client application, Can be attached to IM apps to manage your PC Remotely
 
-# Extension:
-you can register your own tools in form of :
-as Cpp function:
-which is hardcoded ,low Efficiency and not Flexible.
+# Extension
+
+#as Cpp function
+
+low Development Efficiency and not Flexible, but has the best Performance.
+
 you can use macro defined in the api header file to define your tool and bind it to a Cpp function Implemented on your own.
 
-as External apps:
+#as External apps
+
 if you have a CLI tool, you can create a json file to Describe how to use and what it does,then place them in 
 Proper Structure so than the project can Recognise them and register as Agent tool.
 
