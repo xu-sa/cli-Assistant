@@ -7,12 +7,15 @@ set_target_properties(syserver PROPERTIES
         VERSION 1.0.8
         SOVERSION 1
 )
-target_compile_features(syserver PUBLIC cxx_std_17)
 
+target_compile_features(syserver PUBLIC cxx_std_17)
 add_executable(schat
     ${CMAKE_CURRENT_SOURCE_DIR}/client/main.c
     ${LIB_DIR}/cJSON/cJSON.c
 )
+if(WIN32)
+    target_link_libraries(schat PRIVATE ws2_32)
+endif()
 target_include_directories(schat PRIVATE ${LIB_DIR}/cJSON)
 target_compile_features(schat PUBLIC c_std_99)
 set_target_properties(schat PROPERTIES
